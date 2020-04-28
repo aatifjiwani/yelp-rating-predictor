@@ -24,13 +24,15 @@ class Embedding():
     # Gets embedded vector for each word in word2Index
     def embed(self, embed_dim):
         embedding_matrix = np.zeros((len(self.tokenizer.word2Index), embed_dim))
+        missed= []
         for word, index in self.tokenizer.word2Index.items():
             embedding_vector = self.embeddings_index.get(word)
             if embedding_vector is not None:
                 embedding_matrix[index] = embedding_vector
             else:
-                print("Word not in pretrained: " + word)
+                missed.append(word)
         print("Length embedding matrix: " + str(len(embedding_matrix)))
+        print("Words not embedded: " + len(missed))
         return embedding_matrix
 
     # reviews should be a list of list of words in reviews
@@ -66,8 +68,8 @@ if __name__ == "__main__":
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     em = Embedding(t)
     # switch between glove and conceptnet
-    em.load_embedding("glove/glove.6B.100d.txt")
-    x = em.embed(100)
+    em.load_embedding("glove/glove.27B.200d.txt")
+    x = em.embed(200)
     print(x)
 
     # mkdir module/module_elmo2
