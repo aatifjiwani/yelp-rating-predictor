@@ -32,7 +32,7 @@ class Embedding():
             else:
                 missed.append(word)
         print("Length embedding matrix: " + str(len(embedding_matrix)))
-        print("Words not embedded: " + len(missed))
+        print("Words not embedded: " + str(len(missed)))
         return embedding_matrix
 
     # reviews should be a list of list of words in reviews
