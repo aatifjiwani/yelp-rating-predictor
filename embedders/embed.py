@@ -59,8 +59,9 @@ class Embedding():
             session = tf.train.MonitoredSession()
         return lambda x: session.run(embeddings, {sentences: x})
 
+    # uses skip-gram
     def load_word2vec(self, reviews):
-        return Word2Vec(reviews, min_count=1, size=50, workers=3, window=3, sg=1)
+        return Word2Vec(reviews, min_count=1, size=200, workers=3, window=3, sg=1)
 
 if __name__ == "__main__":
     sys.path.insert(1, '../datasets/')
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     em = Embedding(t)
     # switch between glove and conceptnet
-    em.load_embedding("glove/glove.27B.200d.txt")
+    em.load_embedding("glove.twitter.27B/glove.twitter.27B.200d.txt")
     x = em.embed(200)
     print(x)
 
