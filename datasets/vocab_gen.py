@@ -13,9 +13,10 @@ from segtok import tokenizer
 
 from collections import Counter
 
+
+PAD_TOKEN = 0
+UNK_TOKEN = 1
 class Tokenizer():
-    PAD_TOKEN = 0
-    UNK_TOKEN = 1
 
     def __init__(self, name, vocabulary_file):
         self.name = name
@@ -23,19 +24,21 @@ class Tokenizer():
         with open(vocabulary_file) as vcb:
             for line in vcb:
                 word, idx = line.strip().split(None, 1) 
-                self.word2Index[word] = idx
+                self.word2Index[word] = int(idx)
 
         self.index2word = {v:k for k,v in self.word2Index.items()}
         self.stemmer = SnowballStemmer("english")
 
-    def tokenize2Index(review):
-        cleaned_review = clean_sentence(review)
+    def tokenize2Index(self, review):
+        cleaned_review = clean_sentence(review.lower())
         stemmed_review = " ".join([self.stemmer.stem(word) for word in cleaned_review.split()])
         tokenized_review = tokenizer.word_tokenizer(stemmed_review)
 
         tokens2indices = []
         for tokenizedWord in tokenized_review:
             tokens2indices.append(self.word2Index.get(tokenizedWord, UNK_TOKEN))
+
+        return tokens2indices
 
 class VocabularyGenerator():
 
@@ -128,7 +131,7 @@ if __name__ == "__main__":
     sent = "what's http://youtu.be/By-A7AN4jEA i've don't i'm you're i'd i'll we love Dr. B, Gibi and the entire Elite Family!!!!!! \
         \nThey all take such great care of our family!!!! Recommend scheduling your appointments soon!!\n\nThank you for all \
         you do for us.. Love you all.. 11th 111lbs 1123423am -blah .awdnw 'awdkawdn \awdawd 1234567891234"
-    v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary.txt")
+    # v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary.txt")
     # review = token.tokenize(sent.lower())
     
     # cleaned = clean_sentence(sent)
@@ -141,8 +144,14 @@ if __name__ == "__main__":
     # print(" ".join([stemmer.stem(word) for word in cleaned.split()]))
 
     # print(review)
-    v.parse_words()
-    v.save_vocabulary()
+    # v.parse_words()
+    # v.save_vocabulary()
+
+    t = Tokenizer("tokenizer", "vocabulary.txt")
+    print(len(t.word2Index))
+
+    # print(t.tokenize2Index("I really loved this meal and it was so yummy. I would go to this place again bitch supercalifragilistic"))
+
 
 
 
