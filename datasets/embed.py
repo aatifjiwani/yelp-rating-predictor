@@ -2,11 +2,10 @@ import numpy as np
 
 class Embedding():
 
-    def __init__(self, vocab, tokenizer, embed_dim):
-        self.vocab = vocab
+    def __init__(self, tokenizer, embed_dim):
         self.tokenizer = tokenizer
         self.embeddings_index = dict()
-        self.embedding_matrix = np.zeros((len(self.vocab), embed_dim))
+        self.embedding_matrix = np.zeros((len(tokenizer), embed_dim))
 
     def load_embedding(self, pretrained_embedding_path):
         f = open(pretrained_embedding_path)
@@ -20,12 +19,9 @@ class Embedding():
 
     def embed(self):
         for word, index in self.tokenizer.word_index.items():
-            if index > len(self.vocab) - 1:
-                break
+            embedding_vector = self.embeddings_index.get(word)
+            if embedding_vector is not None:
+                self.embedding_matrix[index] = embedding_vector
             else:
-                embedding_vector = self.embeddings_index.get(word)
-                if embedding_vector is not None:
-                    self.embedding_matrix[index] = embedding_vector
-                else:
-                    print("Word not in pretrained: " + word)
+                print("Word not in pretrained: " + word)
         print("Length embedding matrix: " + len(embedding_matrix))
