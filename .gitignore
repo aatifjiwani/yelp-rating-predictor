@@ -135,3 +135,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+## CS182 Project ignores
+reviews.txt
+embedded.bin
