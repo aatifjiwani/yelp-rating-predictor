@@ -99,11 +99,12 @@ if __name__ == "__main__":
     #     tokenized_reviews.append(y)
     # np.savetxt("reviews.txt",tokenized_reviews, fmt="%s")
 
-    with open('reviews.txt', 'r') as f:
-        tokenized_reviews = [[word.replace("'", "") for word in line.split(", ")] for line in f]
-        print(tokenized_reviews[0])
-        embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
-        embedded.save("embedded.bin")
-        print(list(embedded.wv.vocab))
-        print(embedded.most_similar("bad"))
-        # embedded = Word2Vec.load("embedded.bin")
+    # with open('reviews.txt', 'r') as f:
+    #     tokenized_reviews = [[word.replace("'", "") for word in line.split(", ")] for line in f]
+    #     print(tokenized_reviews[0])
+    #     embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
+    #     embedded.save("embedded.bin")
+    #     print(list(embedded.wv.vocab))
+    #     print(embedded.most_similar("bad"))
+    embedded = Word2Vec.load("embedded.bin")
+    print(embedded.most_similar("hi"))

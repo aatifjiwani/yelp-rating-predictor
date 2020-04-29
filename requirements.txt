@@ -32,12 +32,13 @@ scipy==1.4.1
 segtok==1.5.9
 six==1.14.0
 tensorboard==2.1.1
-tensorflow==2.1.0
+tensorflow
 tensorflow-estimator==2.1.0
-tensorflow-hub==0.8.0
+tensorflow-hub
 termcolor==1.1.0
 torch==1.5.0
 tqdm==4.45.0
 urllib3==1.25.9
 Werkzeug==1.0.1
 wrapt==1.12.1
+gensim
