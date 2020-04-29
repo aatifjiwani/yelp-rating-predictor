@@ -3,6 +3,7 @@ import tensorflow_hub as hub
 import tensorflow as tf
 from gensim.models import Word2Vec
 import sys
+from nltk.stem import SnowballStemmer
 
 class Embedding():
 
@@ -11,10 +12,12 @@ class Embedding():
         self.embeddings_index = dict()
 
     def load_embedding(self, pretrained_embedding_path):
+        stemmer = SnowballStemmer("english")
         f = open(pretrained_embedding_path)
         for line in f:
             values = line.split()
             word = values[0]
+            word = stemmer.stem(word)
             coeffs = np.asarray(values[1:], dtype='float32')
             self.embeddings_index[word] = coeffs
         f.close()
@@ -66,21 +69,33 @@ class Embedding():
 if __name__ == "__main__":
     sys.path.insert(1, '../datasets/')
     from vocab_gen import Tokenizer
+    from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     em = Embedding(t)
-    # switch between glove and conceptnet
+    #switch between glove and conceptnet
     em.load_embedding("glove.twitter.27B/glove.twitter.27B.200d.txt")
     x = em.embed(200)
     print(x)
 
     # mkdir module/module_elmo2
     # curl -L "https://tfhub.dev/google/elmo/2?tf-hub-format=compressed" | tar -zxvC module/module_elmo2
-    em_elmo = Embedding(None)
-    x = em_elmo.load_ELMO("module/module_elmo2")
-    print(x(["yo name jeff"]))
-    print(x(["my jeff name yo"]))
+    # em_elmo = Embedding(None)
+    # x = em_elmo.load_ELMO("module/module_elmo2")
+    # print(x(["yo name jeff"]))
+    # print(x(["my jeff name yo"]))
 
-    em_w2c = Embedding(None)
-    x = em_w2c.load_word2vec([["my", "name", "jeff"],["your","name","jeff"], ["jeff", "yo", "man"],["why", "he", "not", "make", "my","taco"]])
-    print(x["jeff"])
-    print(x.most_similar("yo"))
+    #em_w2c = Embedding(None)
+    # x = em_w2c.load_word2vec([["my", "name", "jeff"],["your","name","jeff"], ["jeff", "yo", "man"],["why", "he", "not", "make", "my","taco"]])
+    # print(x["jeff"])
+    # print(x.most_similar("yo"))
+
+    tokenized_reviews = []
+    yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
+    print("# reviews: " + str(len(yelp.reviews)))
+    for r in yelp.reviews:
+        y = em.tokenizer.tokenize(r["input"])
+        print(y)
+        tokenized_reviews.append(y)
+    np.savetxt("reviews.txt",tokenized_reviews, fmt="%s")
+    embedded = em.load_word2vec(tokenized_reviews)
+    print(embedded.most_similar("nigger"))
