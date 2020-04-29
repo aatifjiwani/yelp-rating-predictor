@@ -19,7 +19,7 @@ class YelpDataset(Dataset):
         return len(self.reviews)
 
     def __getitem__(self, idx):
-        
+        return self.reviews[idx]
 
 if __name__ == "__main__":
     yelp = YelpDataset("yelp_review_training_dataset.jsonl")
