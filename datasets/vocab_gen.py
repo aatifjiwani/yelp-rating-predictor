@@ -48,6 +48,9 @@ class Tokenizer():
     def index2words(self, logits):
         pass
 
+    def vocabSize(self):
+        return len(self.word2Index)
+
 class VocabularyGenerator():
 
     def __init__(self, src_jsonl_file, dest_txt_file):
