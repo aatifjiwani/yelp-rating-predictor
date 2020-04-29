@@ -93,11 +93,17 @@ if __name__ == "__main__":
     # tokenized_reviews = []
     # yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
     # print("# reviews: " + str(len(yelp.reviews)))
+    # tokenized_reviews_with_ratings = []
     # for r in yelp.reviews:
     #     y = em.tokenizer.tokenize(r["input"])
-    #     print(y)
+    #     new_arr = []
+    #     for i in y:
+    #         new_arr.append([i, r["label"]])
+    #     print(new_arr)
+    #     tokenized_reviews_with_ratings.extend(new_arr)
     #     tokenized_reviews.append(y)
-    # np.savetxt("reviews.txt",tokenized_reviews, fmt="%s")
+    # np.savetxt("review_ratings.txt",tokenized_reviews_with_ratings, fmt="%s")
+    # np.savetxt("review_ratings.txt",tokenized_reviews, fmt="%s")
 
     # with open('reviews.txt', 'r') as f:
     #     tokenized_reviews = [[word.replace("'", "") for word in line.split(", ")] for line in f]
@@ -107,4 +113,4 @@ if __name__ == "__main__":
     #     print(list(embedded.wv.vocab))
     #     print(embedded.most_similar("bad"))
     embedded = Word2Vec.load("embedded.bin")
-    print(embedded.most_similar("hi"))
+    print(len(embedded.wv.vocab))
