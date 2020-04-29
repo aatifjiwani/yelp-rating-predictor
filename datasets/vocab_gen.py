@@ -28,17 +28,25 @@ class Tokenizer():
 
         self.index2word = {v:k for k,v in self.word2Index.items()}
         self.stemmer = SnowballStemmer("english")
-
-    def tokenize2Index(self, review):
+    
+    def tokenize(self, review):
         cleaned_review = clean_sentence(review.lower())
         stemmed_review = " ".join([self.stemmer.stem(word) for word in cleaned_review.split()])
         tokenized_review = tokenizer.word_tokenizer(stemmed_review)
+
+        return tokenized_review
+
+    def tokenize2Index(self, review):
+        tokenized_review = self.tokenize(review)
 
         tokens2indices = []
         for tokenizedWord in tokenized_review:
             tokens2indices.append(self.word2Index.get(tokenizedWord, UNK_TOKEN))
 
         return tokens2indices
+
+    def index2words(self, logits):
+        pass
 
 class VocabularyGenerator():
 
