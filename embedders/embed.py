@@ -69,6 +69,9 @@ if __name__ == "__main__":
     # x = em.embed(200)
     # print(x)
 
+    """ ELMO shit
+    """
+
     # mkdir module/module_elmo2
     # curl -L "https://tfhub.dev/google/elmo/2?tf-hub-format=compressed" | tar -zxvC module/module_elmo2
     # em_elmo = Embedding(None)
@@ -76,17 +79,16 @@ if __name__ == "__main__":
     # print(x(["yo name jeff"]))
     # print(x(["my jeff name yo"]))
 
+    # em_w2c = Embedding(None)
+    # with open('reviews.txt', 'r') as f:
+    #     tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
+    #     print(tokenized_reviews[0])
+    #     embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews)))
+    #     print(len(embedded_elmo.keys()))
+    #     print(len(tokenized_reviews))
 
-    em_w2c = Embedding(None)
-    with open('reviews.txt', 'r') as f:
-        tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
-        print(tokenized_reviews[0])
-        embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews)))
-        print(len(embedded_elmo.keys()))
-        print(len(tokenized_reviews))
-
-
-
+    """ Tokenization of reviews and saving into txt file
+    """
 
     # tokenized_reviews = []
     # yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
@@ -103,12 +105,21 @@ if __name__ == "__main__":
     # np.savetxt("review_ratings.txt",tokenized_reviews_with_ratings, fmt="%s")
     # np.savetxt("review_ratings.txt",tokenized_reviews, fmt="%s")
 
-    # with open('reviews.txt', 'r') as f:
-    #     tokenized_reviews = [[word.replace("'", "").rstrip('\n') for word in line.split(", ")] for line in f]
-    #     print(tokenized_reviews[0])
-    #     embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
-    #     embedded.save("embedded.bin")
-    #     print(list(embedded.wv.vocab))
-    #     print(embedded.most_similar("bad"))
-    embedded = Word2Vec.load("embedded.bin")
-    print(embedded.most_similar("pubewar"))
+    """ Generating word2vec embeddings using Skip-Gram
+    """
+
+    with open('reviews.txt', 'r') as f:
+        print("tokenizing reviews...")
+        tokenized_reviews = [[t.wordOrUnk( word.replace("'", "").rstrip('\n') ) for word in line.split(", ")] for line in f]
+        # print(tokenized_reviews[0])
+
+        print("creating word embeddings...")
+        embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
+
+        print("saving word embeddings...")
+        embedded.save("embedded.bin")
+        print(embedded.most_similar("bad"))
+
+
+    # embedded = Word2Vec.load("embedded.bin")
+    # print(embedded.most_similar("pubewar"))

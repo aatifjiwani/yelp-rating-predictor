@@ -45,6 +45,9 @@ class Tokenizer():
 
         return tokens2indices
 
+    def wordOrUnk(self, word):
+        return word if word in self.word2Index else "<unk>"
+
     def index2words(self, logits):
         pass
 
