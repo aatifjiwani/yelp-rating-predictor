@@ -71,6 +71,7 @@ class Embedding():
     def load_word2vec(self, reviews, num_cores):
         return Word2Vec(reviews, min_count=1, size=200, workers=num_cores, window=2, sg=1)
 
+
 if __name__ == "__main__":
     sys.path.insert(1, '../datasets/')
     from vocab_gen import Tokenizer
