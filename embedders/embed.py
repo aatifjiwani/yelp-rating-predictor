@@ -40,28 +40,19 @@ class Embedding():
         return embedding_matrix
 
     # reviews should be a list of list of words in reviews
-    def load_ELMO(self, module):
-        # elmo = hub.Module("module/module_elmo2/", trainable=False)
-        # review_lengths = []
-        # for i in reviews:
-        #     review_lengths.append(len(i))
-        # embeddings = elmo(
-        #     inputs={
-        #         "tokens": reviews,
-        #         "sequence_len": review_lengths
-        #     },
-        #     signature="tokens",
-        #     as_dict=True)["elmo"]
-        # with tf.Session() as sess:
-        #     sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
-        #     x = sess.run(embeddings)
-        #     return x
-        with tf.Graph().as_default():
-            sentences = tf.placeholder(tf.string)
-            embed = hub.Module(module)
-            embeddings = embed(sentences)
-            session = tf.train.MonitoredSession()
-        return lambda x: session.run(embeddings, {sentences: x})
+    def load_ELMO(self, module,reviews):
+        elmo = hub.load(module)
+        embeddings = elmo.signatures['default'](reviews)
+        with tf.Session() as sess:
+            sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
+            x = sess.run(embeddings)
+            return x
+        # with tf.Graph().as_default():
+        #     sentences = tf.compat.v1.placeholder(tf.string)
+        #     embed = hub.load(module)
+        #     embeddings = embed.signatures['default'](sentences)
+        #     session = tf.compat.v1.train.MonitoredSession()
+        # return lambda x: session.run(embeddings, {sentences: x})
 
     # uses skip-gram
     def load_word2vec(self, reviews, num_cores):
@@ -85,10 +76,17 @@ if __name__ == "__main__":
     # print(x(["yo name jeff"]))
     # print(x(["my jeff name yo"]))
 
-    #em_w2c = Embedding(None)
-    # x = em_w2c.load_word2vec([["my", "name", "jeff"],["your","name","jeff"], ["jeff", "yo", "man"],["why", "he", "not", "make", "my","taco"]])
-    # print(x["jeff"])
-    # print(x.most_similar("yo"))
+
+    em_w2c = Embedding(None)
+    with open('reviews.txt', 'r') as f:
+        tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
+        print(tokenized_reviews[0])
+        embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews)))
+        print(len(embedded_elmo.keys()))
+        print(len(tokenized_reviews))
+
+
+
 
     # tokenized_reviews = []
     # yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
