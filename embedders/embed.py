@@ -43,8 +43,8 @@ class Embedding():
     def load_ELMO(self, module,reviews):
         elmo = hub.load(module)
         embeddings = elmo.signatures['default'](reviews)
-        with tf.Session() as sess:
-            sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
+        with tf.compat.v1.Session() as sess:
+            sess.run([tf.compat.v1.global_variables_initializer(), tf.compat.v1.tables_initializer()])
             x = sess.run(embeddings)
             return x
         # with tf.Graph().as_default():
@@ -79,13 +79,13 @@ if __name__ == "__main__":
     # print(x(["yo name jeff"]))
     # print(x(["my jeff name yo"]))
 
-    # em_w2c = Embedding(None)
-    # with open('reviews.txt', 'r') as f:
-    #     tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
-    #     print(tokenized_reviews[0])
-    #     embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews)))
-    #     print(len(embedded_elmo.keys()))
-    #     print(len(tokenized_reviews))
+    em_w2c = Embedding(None)
+    with open('reviews.txt', 'r') as f:
+        tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
+        print(tokenized_reviews[0])
+        embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews[:5])))
+        print(len(embedded_elmo.keys()))
+        print(len(tokenized_reviews))
 
     """ Tokenization of reviews and saving into txt file
     """
@@ -108,17 +108,17 @@ if __name__ == "__main__":
     """ Generating word2vec embeddings using Skip-Gram
     """
 
-    with open('reviews.txt', 'r') as f:
-        print("tokenizing reviews...")
-        tokenized_reviews = [[t.wordOrUnk( word.replace("'", "").rstrip('\n') ) for word in line.split(", ")] for line in f]
-        # print(tokenized_reviews[0])
-
-        print("creating word embeddings...")
-        embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
-
-        print("saving word embeddings...")
-        embedded.save("embedded.bin")
-        print(embedded.most_similar("bad"))
+    # with open('reviews.txt', 'r') as f:
+    #     print("tokenizing reviews...")
+    #     tokenized_reviews = [[t.wordOrUnk( word.replace("'", "").rstrip('\n') ) for word in line.split(", ")] for line in f]
+    #     # print(tokenized_reviews[0])
+    #
+    #     print("creating word embeddings...")
+    #     embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
+    #
+    #     print("saving word embeddings...")
+    #     embedded.save("embedded.bin")
+    #     print(embedded.most_similar("bad"))
 
 
     # embedded = Word2Vec.load("embedded.bin")
