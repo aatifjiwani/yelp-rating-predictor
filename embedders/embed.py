@@ -65,7 +65,7 @@ class Embedding():
 
     # uses skip-gram
     def load_word2vec(self, reviews, num_cores):
-        return Word2Vec(reviews, min_count=5, size=200, workers=num_cores, window=2, sg=1)
+        return Word2Vec(reviews, min_count=1, size=200, workers=num_cores, window=2, sg=1)
 
 if __name__ == "__main__":
     sys.path.insert(1, '../datasets/')
@@ -106,11 +106,11 @@ if __name__ == "__main__":
     # np.savetxt("review_ratings.txt",tokenized_reviews, fmt="%s")
 
     # with open('reviews.txt', 'r') as f:
-    #     tokenized_reviews = [[word.replace("'", "") for word in line.split(", ")] for line in f]
+    #     tokenized_reviews = [[word.replace("'", "").rstrip('\n') for word in line.split(", ")] for line in f]
     #     print(tokenized_reviews[0])
     #     embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
     #     embedded.save("embedded.bin")
     #     print(list(embedded.wv.vocab))
     #     print(embedded.most_similar("bad"))
     embedded = Word2Vec.load("embedded.bin")
-    print(len(embedded.wv.vocab))
+    print(embedded.most_similar("pubewar"))
