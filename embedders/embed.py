@@ -12,13 +12,23 @@ class Embedding():
         self.tokenizer = tokenizer
         self.embeddings_index = dict()
 
-    def load_embedding(self, pretrained_embedding_path):
+    def load_stem_embedding(self, pretrained_embedding_path):
         stemmer = SnowballStemmer("english")
         f = open(pretrained_embedding_path)
         for line in f:
             values = line.split()
             word = values[0]
             word = stemmer.stem(word)
+            coeffs = np.asarray(values[1:], dtype='float32')
+            self.embeddings_index[word] = coeffs
+        f.close()
+        print('Loaded %s word vectors.' % len(self.embeddings_index))
+
+    def load_embedding(self, pretrained_embedding_path):
+        f = open(pretrained_embedding_path, encoding="utf-8")
+        for line in f:
+            values = line.split()
+            word = values[0]
             coeffs = np.asarray(values[1:], dtype='float32')
             self.embeddings_index[word] = coeffs
         f.close()
@@ -33,8 +43,11 @@ class Embedding():
             embedding_vector = self.embeddings_index.get(word)
             if embedding_vector is not None:
                 embedding_matrix[index] = embedding_vector
+            elif word == "<pad>":
+                embedding_matrix[index] = [0] * 200
             else:
                 missed.append(word)
+                embedding_matrix[index] = [1] * 200
         print("Length embedding matrix: " + str(len(embedding_matrix)))
         print("Words not embedded: " + str(len(missed)))
         return embedding_matrix
@@ -79,13 +92,12 @@ if __name__ == "__main__":
     # print(x(["yo name jeff"]))
     # print(x(["my jeff name yo"]))
 
-    em_w2c = Embedding(None)
-    with open('reviews.txt', 'r') as f:
-        tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
-        print(tokenized_reviews[0])
-        embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews[:5])))
-        print(len(embedded_elmo.keys()))
-        print(len(tokenized_reviews))
+    # em_w2c = Embedding(None)
+    # with open('reviews.txt', 'r') as f:
+    #     tokenized_reviews = [line.replace("'", "").replace(",","").rstrip('\n') for line in f]
+    #     print(tokenized_reviews[0])
+    #     embedded_elmo = em_w2c.load_ELMO("https://tfhub.dev/google/elmo/2",tf.convert_to_tensor(np.array(tokenized_reviews[:5])))
+    #     print(embedded_elmo["default"])
 
     """ Tokenization of reviews and saving into txt file
     """
@@ -122,4 +134,9 @@ if __name__ == "__main__":
 
 
     # embedded = Word2Vec.load("embedded.bin")
+    # embedded.wv.save_word2vec_format("embedded.txt",binary=False)
     # print(embedded.most_similar("pubewar"))
+
+    em.load_embedding("embedded.txt")
+    vocab_embedded = em.embed(200)
+    print(vocab_embedded)
