@@ -1,4 +1,5 @@
 from models.pytorch_lstm import TorchBiLSTM
+from utils.pytorch_utils import *
 from embedders.embed import *
 from datasets.YelpDataset import YelpDataset
 from datasets.vocab_gen import Tokenizer
@@ -8,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import logging
 
@@ -19,41 +21,65 @@ def createLogger():
     return logger
 
 def train(logger):
+    
+    ## ------ Dataset Modules ------- ##
+
     tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
 
-    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=850, is_from_partition=True)
-    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=850, is_from_partition=True)
+    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
+    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
 
     embedder = Embedding(tokenizer)
-    # embedding_matrix = embedder.embedWithModel("embedders/embedded_version2.bin", 200)
-    # embedding_matrix = torch.Tensor(embedding_matrix)
     embedder.load_embedding("embedders/embeddingsV1.txt")
     embedding_matrix = torch.Tensor(embedder.embed(200))
 
     logger.info("loaded dataset modules...")
 
-    epochs = 10
-    batch_size = 64
+    ## ------ Experiment Modules ------- ##
 
-    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=128, num_workers=4)
-    validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=128, num_workers=4)
+    epochs = 2
+    batch_size = 128
 
+    patience=1
+    delta = 0
+    checkpoint_file = "torch_bilstm_v1"
+    model_file = "model_plots/{}".format(checkpoint_file)
+
+    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4)
+    validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
 
     model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
     optimizer = torch.optim.Adam(model.parameters())
-    # optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-2, momentum=0.9)
     cross_entropy_loss = F.cross_entropy
+    early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file)
 
     logger.info("loaded experiment modules...")
+
+    ## ------ Training and Evaluation ----- ##
+    training_losses, training_accuracies = [], []
+    valid_losses, valid_accuracies = [], []
 
     for epoch in range(epochs):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
         t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
-        v_avg_loss, v_avg_acc = val_epoch(mode, validation_loader, cross_entropy_loss, epoch+1)
-        
+        v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
+
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
         print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
+
+        training_losses.append(t_avg_loss)
+        training_accuracies.append(t_avg_acc)
+        valid_losses.append(v_avg_loss)
+        valid_accuracies.append(v_avg_acc)
+
+        early_stopping(v_avg_loss, model)
+        if early_stopping.early_stop:
+            print("EARLY STOPPING...")
+            break
+
+    plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
+    plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
 
 def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
     total_loss = 0
@@ -106,7 +132,6 @@ def val_epoch(model, val_loader, loss_fn, epoch):
 
 
 def compute_accuracy(logits, target, idx):
-
     pred = logits.argmax(dim=1, keepdim=True)
     correct = pred.eq(target.view_as(pred)).sum()
 
