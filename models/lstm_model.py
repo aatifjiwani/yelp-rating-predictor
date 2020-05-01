@@ -57,6 +57,20 @@ class LSTM_Model():
         plt.savefig("LSTM_Acc.png", dpi=300)
         plt.show()
 
+    def load_model(self, path):
+        self.build()
+        self.model.load_weights(path)
+
+    def test(self, tokenizer, review, max_length):
+        sequenced_review = tokenizer.tokenize2Index(review)
+        if len(sequenced_review) > max_length:
+            sequenced_review = sequenced_review[:max_length]
+        elif len(sequenced_review) < max_length:
+            sequenced_review += [PAD_TOKEN] * (max_length - len(sequenced_review))
+        sequenced_review = [int(x) for x in sequenced_review]
+        return self.model.predict_classes(np.asarray(sequenced_review))
+
+
 def is_int(val):
     try:
         num = int(val)
@@ -66,7 +80,7 @@ def is_int(val):
 
 if __name__=="__main__":
     sys.path.insert(1, '../datasets/')
-    from vocab_gen import Tokenizer
+    from vocab_gen import *
     from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
@@ -93,6 +107,9 @@ if __name__=="__main__":
     l.run(x_train, y_train, x_val, y_val, "model_lstm.model")
     l.plot_acc()
     l.plot_loss()
+
+    # l.load_model("model_lstm.model")
+    # print(l.test(t, "This food sucks. I hate this place. It's awful. I will kill the owners.", 1000))
 
 
 
