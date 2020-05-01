@@ -11,7 +11,7 @@ except ImportError:
     from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
-    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50):
+    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False):
         self.jsonl_file = jsonl_file
 
         self.reviews = []
@@ -20,10 +20,14 @@ class YelpDataset(Dataset):
 
         with jsonlines.open(self.jsonl_file) as reader:
             for obj in reader.iter(type=dict, skip_invalid=True):
-                # rating = obj["stars"]
-                # review = obj["text"]
+                if is_from_partition:
+                    self.reviews.append({"input": obj["input"], "label": obj["label"]})
+                else:
+                    rating = obj["stars"]
+                    review = obj["text"]
 
-                self.reviews.append({"input": obj["input"], "label": obj["label"]})
+                    self.reviews.append({"input": review, "label": rating})
+                
 
         print("dataset loaded...")
 
