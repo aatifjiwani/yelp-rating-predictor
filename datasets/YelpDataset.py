@@ -2,11 +2,13 @@ import numpy as np
 from torch.utils.data import Dataset
 import jsonlines
 import json
-import vocab_gen
 import random
 from tqdm import tqdm
 
-from vocab_gen import *
+try:
+    from vocab_gen import *
+except ImportError:
+    from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
     def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50):
@@ -71,7 +73,7 @@ class YelpDataset(Dataset):
             if len(sequenced_review) > max_length:
                 sequenced_review = sequenced_review[:max_length]
             elif len(sequenced_review) < max_length:
-                sequenced_review += [vocab_gen.PAD_TOKEN]*(max_length-len(sequenced_review))
+                sequenced_review += [PAD_TOKEN]*(max_length-len(sequenced_review))
             sequenced_review = [int(x) for x in sequenced_review]
             if i <= int(.8*num_reviews):
                 x_train.append(sequenced_review)

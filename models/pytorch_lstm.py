@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class TorchBiLSTM(nn.Module):
 
-    def __init__(self, embedding_matrix, hidden_size=128, dropout=0, batch_first=True, num_classes):
+    def __init__(self, embedding_matrix, hidden_size=128, dropout=0, batch_first=True, num_classes=5):
         super(TorchLSTM, self).__init__()
 
         self.num_classes = num_classes
@@ -34,9 +34,5 @@ class TorchBiLSTM(nn.Module):
         logits = self.prediction(h_n)
 
         return logits
-
-
-
-        
 
         
