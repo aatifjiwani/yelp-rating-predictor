@@ -64,15 +64,23 @@ class LSTM_Model():
         self.build()
         self.model.load_weights(path)
 
-    def test(self, tokenizer, review, max_length):
-        sequenced_review = tokenizer.tokenize2Index(review)
-        if len(sequenced_review) > max_length:
-            sequenced_review = sequenced_review[:max_length]
-        elif len(sequenced_review) < max_length:
-            sequenced_review += [PAD_TOKEN] * (max_length - len(sequenced_review))
-        sequenced_review = [int(x) for x in sequenced_review]
+    def test(self, sequenced_review):
         return self.model.predict_classes(np.array(sequenced_review).reshape(1, -1))[0]+1
 
+    def test_challenge_set(self, num, model_path):
+        test_yelp = YelpDataset("../datasets/yelp_challenge_" + str(num) + "_with_answers.jsonl")
+        x_test, y_test = test_yelp.make_datasets(t, 1000, "x_test_"+ str(num) +".txt", "y_test_"+ str(num) +".txt")
+        self.load_model(model_path)
+        mae = 0.0
+        acc = 0.0
+        for i in range(len(x_test)):
+            pred = self.test(x_test[i])
+            mae += abs(np.argwhere(y_test[i] == 1)[0][0] + 1 - pred)
+            if np.argwhere(y_test[i] == 1)[0][0] + 1 == pred:
+                acc += 1
+        mae = mae / len(x_test)
+        acc = acc / len(x_test)
+        return mae, acc
 
 def is_int(val):
     try:
@@ -87,7 +95,7 @@ if __name__=="__main__":
     from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
-    # x_train, y_train = yelp.make_datasets(t, 1000)
+    # x_train, y_train = yelp.make_datasets(t, 1000, "x_train.txt", "y_train.txt")
     # with open('../models/x_train.txt', 'r') as f:
     #     x_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
     # with open('../models/y_train.txt', 'r') as f:
@@ -106,9 +114,13 @@ if __name__=="__main__":
     # l.run(x_train, y_train, 0.2)
     # l.plot_acc()
     # l.plot_loss()
-
-    l.load_model("model_lstm.model")
-    print(l.test(t, "The food was okay. I think my pasta was a little bland, but the service was quick.", 1000))
+    mae_5, acc_5 = l.test_challenge_set(5, "model_lstm.model")
+    mae_6, acc_6 = l.test_challenge_set(6, "model_lstm.model")
+    print("mae_5: " + str(mae_5))
+    print("acc_5: " + str(acc_5))
+    print("mae_6: " + str(mae_6))
+    print("acc_6: " + str(acc_6))
+    # print(l.test("I went to this campus for 1 semester. I was in Business - Information Systems.\n\nThe campus is okay. The food choices are bismal.\n\nThe building is laid with the cafeteria on the bottom level, and then classes on the 2nd, 3rd, and 4th with each faculty basically having their own floor.\n\nTHe campus is pretty enough, but have fun getting the elevator around class start times...you're better to just stair it. \n\n\nIt's Seneca College after all."))
 
 
 
