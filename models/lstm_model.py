@@ -71,7 +71,7 @@ class LSTM_Model():
         elif len(sequenced_review) < max_length:
             sequenced_review += [PAD_TOKEN] * (max_length - len(sequenced_review))
         sequenced_review = [int(x) for x in sequenced_review]
-        return self.model.predict_classes(np.asarray(sequenced_review))
+        return self.model.predict_classes(np.array(sequenced_review.reshape(1, -1)))[0]+1
 
 
 def is_int(val):
@@ -87,7 +87,7 @@ if __name__=="__main__":
     from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
-    x_train, y_train = yelp.make_datasets(t, 1000)
+    # x_train, y_train = yelp.make_datasets(t, 1000)
     # with open('../models/x_train.txt', 'r') as f:
     #     x_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
     # with open('../models/y_train.txt', 'r') as f:
@@ -101,14 +101,14 @@ if __name__=="__main__":
     vocab_embedded = em.embed(200)
 
     l = LSTM_Model(vocab_embedded)
-    l.build()
+    # l.build()
+    #
+    # l.run(x_train, y_train, 0.2)
+    # l.plot_acc()
+    # l.plot_loss()
 
-    l.run(x_train, y_train, 0.2)
-    l.plot_acc()
-    l.plot_loss()
-
-    # l.load_model("model_lstm.model")
-    # print(l.test(t, "This food sucks. I hate this place. It's awful. I will kill the owners.", 1000))
+    l.load_model("model_lstm.model")
+    print(l.test(t, "The food was okay. I think my pasta was a little bland, but the service was quick.", 1000))
 
 
 
