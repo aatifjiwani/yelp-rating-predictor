@@ -69,15 +69,15 @@ if __name__=="__main__":
     from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
-    # x_train, y_train, x_val, y_val = yelp.make_datasets(t, 1000)
-    with open('../models/x_train.txt', 'r') as f:
-        x_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
-    with open('../models/y_train.txt', 'r') as f:
-        y_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
-    with open('../models/x_val.txt', 'r') as f:
-        x_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
-    with open('../models/y_val.txt', 'r') as f:
-        y_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
+    x_train, y_train, x_val, y_val = yelp.make_datasets(t, 1000)
+    # with open('../models/x_train.txt', 'r') as f:
+    #     x_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
+    # with open('../models/y_train.txt', 'r') as f:
+    #     y_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
+    # with open('../models/x_val.txt', 'r') as f:
+    #     x_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
+    # with open('../models/y_val.txt', 'r') as f:
+    #     y_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split(" ") if is_int(idx.rstrip('\n'))] for line in f])
 
     sys.path.insert(1, '../embedders/')
     from embed import Embedding

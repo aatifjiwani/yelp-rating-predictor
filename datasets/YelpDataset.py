@@ -45,7 +45,7 @@ class YelpDataset(Dataset):
         np.savetxt('y_train.txt', y_train, fmt='%4d')
         np.savetxt('x_val.txt', x_val, fmt='%4d')
         np.savetxt('y_val.txt', y_val, fmt='%4d')
-        return x_train, y_train, x_val, y_val
+        return np.asarray(x_train), np.asarray(y_train), np.asarray(x_val), np.asarray(y_val)
 
 
 if __name__ == "__main__":
