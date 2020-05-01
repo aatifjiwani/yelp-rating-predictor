@@ -45,8 +45,8 @@ class LSTM_Model():
         plt.show()
 
     def plot_acc(self):
-        plt.plot(self.history.history['acc'])
-        plt.plot(self.history.history['val_acc'])
+        plt.plot(self.history.history['accuracy'])
+        plt.plot(self.history.history['val_accuracy'])
         plt.xticks(np.arange(0, 2, step=1))
         plt.title('model accuracy')
         plt.ylabel('accuracy')
