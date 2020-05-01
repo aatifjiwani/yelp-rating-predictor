@@ -7,7 +7,7 @@ import re
 import nltk
 from nltk import RegexpTokenizer
 from nltk.stem import SnowballStemmer
-nltk.download('punkt')
+# nltk.download('punkt')
 
 from segtok import tokenizer
 

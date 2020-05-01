@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Google compute stuff
+pyvenv.cfg
+
 # C extensions
 *.so
 
@@ -139,3 +142,4 @@ dmypy.json
 ## CS182 Project ignores
 reviews.txt
 embedded.bin
+embedded_version2.bin

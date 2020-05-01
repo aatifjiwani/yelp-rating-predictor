@@ -5,6 +5,7 @@ from gensim.models import Word2Vec
 import sys
 from nltk.stem import SnowballStemmer
 import multiprocessing
+from tqdm import tqdm
 
 class Embedding():
 
@@ -33,6 +34,26 @@ class Embedding():
             self.embeddings_index[word] = coeffs
         f.close()
         print('Loaded %s word vectors.' % len(self.embeddings_index))
+
+    def embedWithModel(self, model_file, embedding_dim):
+        embedding_model = Word2Vec.load(model_file)
+        print("model loaded")
+
+        embedding_matrix = np.zeros((len(self.tokenizer.word2Index), embedding_dim))
+        missed = []
+
+        for word, index in tqdm(self.tokenizer.word2Index.items()):
+            if (word == "<pad>"):
+                embedding_matrix[index] = [0] * 200
+            else:
+                embedding_for_word = embedding_model[word]
+                if embedding_for_word is not None:
+                    embedding_matrix[index] = np.array(embedding_for_word)
+                else:
+                    missed.append(word)
+
+        print("Words not embedded: " + str(len(missed)))
+        return embedding_matrix, embedding_model
 
     # USE THIS FOR LSTM EMBEDDING WEIGHT
     # Gets embedded vector for each word in word2Index
@@ -125,19 +146,19 @@ if __name__ == "__main__":
     #     print("tokenizing reviews...")
     #     tokenized_reviews = [[t.wordOrUnk( word.replace("'", "").rstrip('\n') ) for word in line.split(", ")] for line in f]
     #     # print(tokenized_reviews[0])
-    #
+    
     #     print("creating word embeddings...")
     #     embedded = em.load_word2vec(tokenized_reviews, multiprocessing.cpu_count()//2)
-    #
+    
     #     print("saving word embeddings...")
     #     embedded.save("embedded.bin")
     #     print(embedded.most_similar("bad"))
+    
+    embedding_matrix = em.embedWithModel("embedded_version2.bin", 200)
 
+    # print(len(embedded.wv.vocab))
+    # print(embedded["good"])
 
-    # embedded = Word2Vec.load("embedded.bin")
-    # embedded.wv.save_word2vec_format("embedded.txt",binary=False)
-    # print(embedded.most_similar("pubewar"))
-
-    em.load_embedding("embedded.txt")
-    vocab_embedded = em.embed(200)
-    print(vocab_embedded)
+    # em.load_embedding("embedded.txt")
+    # vocab_embedded = em.embed(200)
+    # print(vocab_embedded)
