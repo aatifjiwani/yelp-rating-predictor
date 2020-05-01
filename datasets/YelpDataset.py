@@ -44,7 +44,7 @@ class YelpDataset(Dataset):
         if (len(review) < self.max_len):
             review += [PAD_TOKEN]*(self.max_len-len(review))
 
-        return {"input": np.array(review), "label": np.array(stars)}
+        return {"input": np.array(review), "label": np.array(stars - 1)}
 
 
     def split_dataset(self, training_partition: float, training_file: str, validation_file: str):

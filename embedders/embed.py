@@ -26,8 +26,9 @@ class Embedding():
         print('Loaded %s word vectors.' % len(self.embeddings_index))
 
     def load_embedding(self, pretrained_embedding_path):
+        print("loading embeddings")
         f = open(pretrained_embedding_path, encoding="utf-8")
-        for line in f:
+        for line in tqdm(f):
             values = line.split()
             word = values[0]
             coeffs = np.asarray(values[1:], dtype='float32')
@@ -53,14 +54,15 @@ class Embedding():
                     missed.append(word)
 
         print("Words not embedded: " + str(len(missed)))
-        return embedding_matrix, embedding_model
+        return embedding_matrix
 
     # USE THIS FOR LSTM EMBEDDING WEIGHT
     # Gets embedded vector for each word in word2Index
     def embed(self, embed_dim):
+        print("creating embeddings matrix")
         embedding_matrix = np.zeros((len(self.tokenizer.word2Index), embed_dim))
         missed= []
-        for word, index in self.tokenizer.word2Index.items():
+        for word, index in tqdm(self.tokenizer.word2Index.items()):
             embedding_vector = self.embeddings_index.get(word)
             if embedding_vector is not None:
                 embedding_matrix[index] = embedding_vector
