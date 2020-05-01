@@ -71,7 +71,7 @@ class LSTM_Model():
         elif len(sequenced_review) < max_length:
             sequenced_review += [PAD_TOKEN] * (max_length - len(sequenced_review))
         sequenced_review = [int(x) for x in sequenced_review]
-        return self.model.predict_classes(np.array(sequenced_review.reshape(1, -1)))[0]+1
+        return self.model.predict_classes(np.array(sequenced_review).reshape(1, -1))[0]+1
 
 
 def is_int(val):
