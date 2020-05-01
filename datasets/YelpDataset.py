@@ -79,18 +79,12 @@ class YelpDataset(Dataset):
             elif len(sequenced_review) < max_length:
                 sequenced_review += [PAD_TOKEN]*(max_length-len(sequenced_review))
             sequenced_review = [int(x) for x in sequenced_review]
-            if i <= int(.8*num_reviews):
-                x_train.append(sequenced_review)
-                y_train.append(rating_vector)
-            else:
-                x_val.append(sequenced_review)
-                y_val.append(rating_vector)
+            x_train.append(sequenced_review)
+            y_train.append(rating_vector)
 
         np.savetxt('x_train.txt', x_train, fmt ='%4d')
         np.savetxt('y_train.txt', y_train, fmt='%4d')
-        np.savetxt('x_val.txt', x_val, fmt='%4d')
-        np.savetxt('y_val.txt', y_val, fmt='%4d')
-        return np.asarray(x_train), np.asarray(y_train), np.asarray(x_val), np.asarray(y_val)
+        return np.asarray(x_train), np.asarray(y_train)
 
 
 if __name__ == "__main__":

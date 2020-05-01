@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers.embeddings import Embedding as Em
 from keras.layers import Dense, Flatten, LSTM, Conv1D, MaxPooling1D, Dropout, Activation, Bidirectional
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
@@ -23,15 +24,17 @@ class LSTM_Model():
         print(model.summary())
         self.model = model
 
-    def run(self, x_t, y_t, x_v, y_v, save_path):
+    def run(self, x_t, y_t, val_percentage, save_path):
+        es = EarlyStopping(monitor='val_loss', min_delta=0, mode='min', verbose=1, patience=1)
+        mc = ModelCheckpoint('best_lstm_model.model', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
         self.history = self.model.fit(x_t,
                       y_t,
                       epochs=3,
                       batch_size=128,
-                      validation_data=(x_v, y_v)
+                      validation_split=val_percentage,
+                      callbacks=[es, mc]
                        )
         print(self.history.history.keys())
-        self.model.save(save_path)
 
     def plot_loss(self):
 
@@ -84,15 +87,11 @@ if __name__=="__main__":
     from YelpDataset import YelpDataset
     t = Tokenizer("yo", "../datasets/vocabulary.txt")
     yelp = YelpDataset("../datasets/yelp_review_training_dataset.jsonl")
-    x_train, y_train, x_val, y_val = yelp.make_datasets(t, 1000)
+    x_train, y_train = yelp.make_datasets(t, 1000)
     # with open('../models/x_train.txt', 'r') as f:
     #     x_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
     # with open('../models/y_train.txt', 'r') as f:
     #     y_train = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
-    # with open('../models/x_val.txt', 'r') as f:
-    #     x_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
-    # with open('../models/y_val.txt', 'r') as f:
-    #     y_val = np.asarray([[int(idx.rstrip('\n')) for idx in line.split() if is_int(idx.rstrip('\n'))] for line in f])
 
     sys.path.insert(1, '../embedders/')
     from embed import Embedding
@@ -104,7 +103,7 @@ if __name__=="__main__":
     l = LSTM_Model(vocab_embedded)
     l.build()
 
-    l.run(x_train, y_train, x_val, y_val, "model_lstm.model")
+    l.run(x_train, y_train, 0.2, "model_lstm.model")
     l.plot_acc()
     l.plot_loss()
 
