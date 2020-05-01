@@ -24,7 +24,7 @@ class LSTM_Model():
         print(model.summary())
         self.model = model
 
-    def run(self, x_t, y_t, val_percentage, save_path):
+    def run(self, x_t, y_t, val_percentage):
         es = EarlyStopping(monitor='val_loss', min_delta=0, mode='min', verbose=1, patience=1)
         mc = ModelCheckpoint('best_lstm_model.model', monitor='val_accuracy', mode='max', verbose=1, save_best_only=True)
         self.history = self.model.fit(x_t,
@@ -103,7 +103,7 @@ if __name__=="__main__":
     l = LSTM_Model(vocab_embedded)
     l.build()
 
-    l.run(x_train, y_train, 0.2, "model_lstm.model")
+    l.run(x_train, y_train, 0.2)
     l.plot_acc()
     l.plot_loss()
 
