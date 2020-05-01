@@ -72,7 +72,7 @@ class YelpDataset(Dataset):
         num_reviews = len(self.reviews)
         for i in range(num_reviews):
             rating_vector = [0,0,0,0,0]
-            rating_vector[self.reviews[i]["label"]-1] = 1
+            rating_vector[int(self.reviews[i]["label"])-1] = 1
             sequenced_review = tokenizer.tokenize2Index(self.reviews[i]["input"])
             if len(sequenced_review) > max_length:
                 sequenced_review = sequenced_review[:max_length]
