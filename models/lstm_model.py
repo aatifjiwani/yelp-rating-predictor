@@ -23,7 +23,7 @@ class LSTM_Model():
         print(model.summary())
         self.model = model
 
-    def run(self, x_t, y_t, x_v, y_v):
+    def run(self, x_t, y_t, x_v, y_v, save_path):
         self.history = self.model.fit(x_t,
                       y_t,
                       epochs=3,
@@ -31,6 +31,7 @@ class LSTM_Model():
                       validation_data=(x_v, y_v)
                        )
         print(self.history.history.keys())
+        self.model.save(save_path)
 
     def plot_loss(self):
 
@@ -89,7 +90,7 @@ if __name__=="__main__":
     l = LSTM_Model(vocab_embedded)
     l.build()
 
-    l.run(x_train, y_train, x_val, y_val)
+    l.run(x_train, y_train, x_val, y_val, "model_lstm.model")
     l.plot_acc()
     l.plot_loss()
 
