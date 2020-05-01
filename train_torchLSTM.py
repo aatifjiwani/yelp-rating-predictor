@@ -32,14 +32,14 @@ def train(logger):
 
     logger.info("loaded dataset modules...")
 
-    epochs = 3
+    epochs = 10
     batch_size = 64
 
     training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=128, num_workers=4)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=128, num_workers=4)
 
 
-    model = TorchBiLSTM(embedding_matrix, hidden_size=64, dropout=0.2).cuda()
+    model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
     optimizer = torch.optim.Adam(model.parameters())
     # optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-2, momentum=0.9)
     cross_entropy_loss = F.cross_entropy
@@ -48,9 +48,12 @@ def train(logger):
 
     for epoch in range(epochs):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
-        avg_loss, avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
-        break
-        print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {}; \n".format(epoch+1, avg_loss, avg_acc*100))
+
+        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
+        v_avg_loss, v_avg_acc = val_epoch(mode, validation_loader, cross_entropy_loss, epoch+1)
+        
+        print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
+        print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
 
 def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
     total_loss = 0
@@ -75,10 +78,32 @@ def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
         total_accuracy += curr_accuracy
 
         avg_loss = total_loss / (idx + 1)
-        loader.set_description("TRAIN - Avg Loss: %.4f; Avg. Accuracy: %.6f;" % (avg_loss, curr_accuracy*100) )
-        # break
+        loader.set_description("TRAIN - Avg Loss: %.4f; Curr. Accuracy: %.6f;" % (avg_loss, curr_accuracy*100) )
     
     return avg_loss, total_accuracy / (idx + 1)
+
+def val_epoch(model, val_loader, loss_fn, epoch):
+    total_loss = 0
+    total_accuracy = 0
+    loader = tqdm(val_loader)
+
+    model.eval()
+    for idx, inputs in enumerate(loader):
+        reviews, targets = inputs["input"], inputs["label"]
+        reviews, targets = reviews.cuda(), targets.cuda()
+
+        predicted_logits = model(reviews)
+        loss = loss_fn(predicted_logits, targets)
+
+        total_loss += loss.item()
+        curr_accuracy = compute_accuracy(predicted_logits, targets, idx).item()
+        total_accuracy += curr_accuracy
+
+        avg_loss = total_loss / (idx + 1)
+        loader.set_description("VALIDATION - Avg Loss: %.4f; Curr. Accuracy: %.6f;" % (avg_loss, curr_accuracy*100) )
+    
+    return avg_loss, total_accuracy / (idx + 1)
+
 
 def compute_accuracy(logits, target, idx):
 

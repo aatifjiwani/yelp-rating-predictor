@@ -11,12 +11,13 @@ except ImportError:
     from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
-    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False):
+    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, should_stem=True):
         self.jsonl_file = jsonl_file
 
         self.reviews = []
         self.tokenizer = tokenizer
         self.max_len = max_len
+        self.should_stem = should_stem
 
         with jsonlines.open(self.jsonl_file) as reader:
             for obj in reader.iter(type=dict, skip_invalid=True):
@@ -40,7 +41,7 @@ class YelpDataset(Dataset):
         sample =  self.reviews[idx]
         review, stars = sample["input"], int(sample["label"])
 
-        review = self.tokenizer.tokenize2Index(review)[:self.max_len]
+        review = self.tokenizer.tokenize2Index(review, self.should_stem)[:self.max_len]
         if (len(review) < self.max_len):
             review += [PAD_TOKEN]*(self.max_len-len(review))
 
@@ -85,23 +86,4 @@ class YelpDataset(Dataset):
         np.savetxt('x_train.txt', x_train, fmt ='%4d')
         np.savetxt('y_train.txt', y_train, fmt='%4d')
         return np.asarray(x_train), np.asarray(y_train)
-
-
-if __name__ == "__main__":
-    # yelp = YelpDataset("yelp_review_training_dataset.jsonl")
-    # print(len(yelp))
-    # print(yelp[len(yelp) - 1])
-    # yelp.split_dataset(0.8, "yelp_training.jsonl", "yelp_validation.jsonl")
-
-    # yelp_train = YelpDataset("yelp_training.jsonl")
-
-    # tokenizer = Tokenizer("global", "vocabulary.txt")
-    # yelp_val = YelpDataset("yelp_validation.jsonl", tokenizer=tokenizer, max_len=100)
-    # print(yelp_val.reviews[10])
-    # print(yelp_val[10])
-
-    # print(len(yelp_train))
-    # print(len(yelp_val))
-    # print(yelp_val[len(yelp_val) - 1]
-    pass
 

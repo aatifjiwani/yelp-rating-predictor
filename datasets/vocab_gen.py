@@ -29,15 +29,18 @@ class Tokenizer():
         self.index2word = {v:k for k,v in self.word2Index.items()}
         self.stemmer = SnowballStemmer("english")
     
-    def tokenize(self, review):
+    def tokenize(self, review, should_stem = True):
         cleaned_review = clean_sentence(review.lower())
-        stemmed_review = " ".join([self.stemmer.stem(word) for word in cleaned_review.split()])
-        tokenized_review = tokenizer.word_tokenizer(stemmed_review)
+
+        if should_stem:
+            cleaned_review = " ".join([self.stemmer.stem(word) for word in cleaned_review.split()])
+
+        tokenized_review = tokenizer.word_tokenizer(cleaned_review)
 
         return tokenized_review
 
-    def tokenize2Index(self, review):
-        tokenized_review = self.tokenize(review)
+    def tokenize2Index(self, review, should_stem = True):
+        tokenized_review = self.tokenize(review, should_stem)
 
         tokens2indices = []
         for tokenizedWord in tokenized_review:
