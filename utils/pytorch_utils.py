@@ -1,5 +1,6 @@
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import os
 
@@ -46,8 +47,8 @@ class EarlyStopping:
     def save_checkpoint(self, val_loss, model):
         '''Saves model when validation loss decrease.'''
         if self.verbose:
-            print("Validation loss decreased ({:.4f} --> {:.4f}).  Saving model ...".format(self.val_loss_min, self.val_loss))
-        torch.save(model.state_dict(), self.checkpoint_file)
+            print("Validation loss decreased ({:.4f} --> {:.4f}).  Saving model ...".format(self.val_loss_min, val_loss))
+        torch.save(model.state_dict(), self.checkpoint_dest)
         self.val_loss_min = val_loss
 
 def plot_and_save(train_metrics, val_matrics, title, label, save_file):
@@ -60,3 +61,4 @@ def plot_and_save(train_metrics, val_matrics, title, label, save_file):
 
     plt.savefig(save_file, dpi=600)
     plt.show()
+    plt.clf()

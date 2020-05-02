@@ -19,7 +19,7 @@ class TorchBiLSTM(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.prediction = nn.Sequential(
-                            nn.Linear( in_features=hidden_size*2, out_features=num_classes, bias=False),
+                            nn.Linear( in_features=hidden_size, out_features=num_classes, bias=True),
                             nn.Softmax( dim=1 )
                         )
 
@@ -36,9 +36,11 @@ class TorchBiLSTM(nn.Module):
         output, (h_n, c_n) = self.biLSTM(reviews)
 
         #h_n of shape (2, Batch, Hidden_Dim)
-        h_n = self.dropout(h_n.permute(1, 0, 2).reshape(batch_size, 2*self.hidden_size))
+        # h_n = self.dropout(h_n.permute(1, 0, 2).reshape(batch_size, 2*self.hidden_size))
 
-        logits = self.prediction(h_n)
+        output = output.view(seq_len, batch_size, 2, self.hidden_size)
+        output = output[0, :, 1, :] + output[seq_len-1,:,0,:]
+        logits = self.prediction(output)
 
         return logits
 

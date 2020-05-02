@@ -70,8 +70,9 @@ class VocabularyGenerator():
                 # curr_words += review
                 review = obj["text"]
                 cleaned_review = clean_sentence(review)
-                stemmed_review = " ".join([stemmer.stem(word) for word in cleaned_review.split()])
-                tokenized_review = tokenizer.word_tokenizer(stemmed_review)
+                
+                # stemmed_review = " ".join([stemmer.stem(word) for word in cleaned_review.split()]) UNCOMMENT THIS LINE FOR STEMMING
+                tokenized_review = tokenizer.word_tokenizer(cleaned_review)
                 self.words.update(tokenized_review)
                 
         print(len(self.words), "unique total words")
@@ -118,7 +119,7 @@ def clean_sentence(sentence):
     sentence = re.sub(r"\'s", " is ", sentence)
     sentence = re.sub(r"\'ve", " have ", sentence)
     sentence = re.sub(r"n't", " not ", sentence)
-    sentence = re.sub(r"i'm", "i am ", sentence)
+    sentence = re.sub(r"i'm", " i am ", sentence)
     sentence = re.sub(r"\'re", " are ", sentence)
     sentence = re.sub(r"\'d", " would ", sentence)
     sentence = re.sub(r"\'ll", " will ", sentence)
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     sent = "what's http://youtu.be/By-A7AN4jEA i've don't i'm you're i'd i'll we love Dr. B, Gibi and the entire Elite Family!!!!!! \
         \nThey all take such great care of our family!!!! Recommend scheduling your appointments soon!!\n\nThank you for all \
         you do for us.. Love you all.. 11th 111lbs 1123423am -blah .awdnw 'awdkawdn \awdawd 1234567891234"
-    # v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary.txt")
+    v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary_nostem.txt")
     # review = token.tokenize(sent.lower())
     
     # cleaned = clean_sentence(sent)
@@ -158,11 +159,11 @@ if __name__ == "__main__":
     # print(" ".join([stemmer.stem(word) for word in cleaned.split()]))
 
     # print(review)
-    # v.parse_words()
-    # v.save_vocabulary()
+    v.parse_words()
+    v.save_vocabulary()
 
-    t = Tokenizer("tokenizer", "vocabulary.txt")
-    print(len(t.word2Index))
+    # t = Tokenizer("tokenizer", "vocabulary.txt")
+    # print(len(t.word2Index))
 
     # print(t.tokenize2Index("I really loved this meal and it was so yummy. I would go to this place again bitch supercalifragilistic"))
 

@@ -9,8 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-
 import logging
 
 def createLogger():
@@ -37,21 +35,21 @@ def train(logger):
 
     ## ------ Experiment Modules ------- ##
 
-    epochs = 2
+    epochs = 10
     batch_size = 128
 
-    patience=1
+    patience=2
     delta = 0
-    checkpoint_file = "torch_bilstm_v1"
+    checkpoint_file = "torch_bilstm_v3_lr1e3"
     model_file = "model_plots/{}".format(checkpoint_file)
 
-    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4)
+    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=True)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
 
     model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     cross_entropy_loss = F.cross_entropy
-    early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file)
+    early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
 
     logger.info("loaded experiment modules...")
 
@@ -63,11 +61,12 @@ def train(logger):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
         t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
+        # break
         v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
 
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
         print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
-
+        
         training_losses.append(t_avg_loss)
         training_accuracies.append(t_avg_acc)
         valid_losses.append(v_avg_loss)
@@ -95,7 +94,7 @@ def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
 
         predicted_logits = model(reviews)
         loss = loss_fn(predicted_logits, targets)
-
+        # break
         loss.backward()
         optimizer.step()
 
