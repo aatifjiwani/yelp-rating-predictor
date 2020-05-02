@@ -72,7 +72,7 @@ class VocabularyGenerator():
                 cleaned_review = clean_sentence(review)
                 
                 # stemmed_review = " ".join([stemmer.stem(word) for word in cleaned_review.split()]) UNCOMMENT THIS LINE FOR STEMMING
-                tokenized_review = tokenizer.word_tokenizer(cleaned_review)
+                tokenized_review = tokenizer.word_tokenizer(cleaned_review.lower())
                 self.words.update(tokenized_review)
                 
         print(len(self.words), "unique total words")
