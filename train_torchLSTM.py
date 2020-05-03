@@ -28,7 +28,7 @@ def train(logger):
     validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
 
     embedder = Embedding(tokenizer)
-    embedder.load_embedding("embedders/embeddingsV1.txt")
+    embedder.load_embedding("embedders/embedding_refine.txt.refine") # embedder.load_embedding("embedders/embeddingsV1.txt")
     embedding_matrix = torch.Tensor(embedder.embed(200))
 
     logger.info("loaded dataset modules...")
@@ -40,8 +40,10 @@ def train(logger):
 
     patience=2
     delta = 0
-    checkpoint_file = "torch_bilstm_v3_lr1e3"
+    checkpoint_file = "torch_bilstm_v4_nonstemembed"
     model_file = "model_plots/{}".format(checkpoint_file)
+
+    logger.info("Expiriment name: {}".format(checkpoint_file))
 
     training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=True)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
