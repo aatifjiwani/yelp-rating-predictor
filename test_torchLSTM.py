@@ -11,6 +11,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import logging
 
+import numpy as np
+
 def createLogger():
     console_logging_format = "%(levelname)s %(message)s"
     logging.basicConfig(level=logging.INFO, format=console_logging_format)
@@ -18,12 +20,35 @@ def createLogger():
 
     return logger
 
+def test_with_text(text, model, DatasetClass, tokenizer):
+    # checkpoint_file = "torch_bilstm_v3_lr1e3.pt"
+
+    # tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
+
+    # embedder = Embedding(tokenizer)
+    # embedder.load_embedding("embedders/embeddingsV1.txt")
+    # embedding_matrix = torch.Tensor(embedder.embed(200))
+
+    # model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    # model.load_state_dict(torch.load("model_checkpoints/{}".format(checkpoint_file)))
+    # model.eval()
+
+    review = DatasetClass.getFromText(text, tokenizer)
+    review = torch.Tensor(np.expand_dims(review, axis=0)).long().cuda()
+
+    predicted_logits = model(review)
+
+    stars = predicted_logits.argmax(dim=1)[0].item()
+
+    return stars + 1 #MAKE SURE TO ADD 1
+
+
 def test_with_answers(logger):
     
     ## ------ Dataset Modules ------- ##
 
     tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
-    testing_yelp = YelpDataset("datasets/yelp_challenge_7.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=False)
+    testing_yelp = YelpDataset("datasets/yelp_challenge_6.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=False)
 
     embedder = Embedding(tokenizer)
     embedder.load_embedding("embedders/embeddingsV1.txt")
@@ -33,7 +58,7 @@ def test_with_answers(logger):
 
     ## ------ Experiment Modules ------- ##
 
-    batch_size = 2
+    batch_size = 1
     checkpoint_file = "torch_bilstm_v3_lr1e3.pt"
 
     test_loader = torch.utils.data.DataLoader(testing_yelp, batch_size=batch_size, num_workers=2, shuffle=False)
@@ -73,3 +98,6 @@ def test_with_answers(logger):
 if __name__ == "__main__":
     logger = createLogger()
     test_with_answers(logger)
+
+    # text = "I went to this campus for 1 semester. I was in Business - Information Systems.\n\nThe campus is okay. The food choices are bismal.\n\nThe building is laid with the cafeteria on the bottom level, and then classes on the 2nd, 3rd, and 4th with each faculty basically having their own floor.\n\nTHe campus is pretty enough, but have fun getting the elevator around class start times...you're better to just stair it. \n\n\nIt's Seneca College after all."
+    # test_with_text(text)
