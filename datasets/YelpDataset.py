@@ -4,6 +4,7 @@ import jsonlines
 import json
 import random
 from tqdm import tqdm
+import pandas as pd
 
 try:
     from vocab_gen import *
@@ -11,13 +12,21 @@ except ImportError:
     from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
-    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, should_stem=True):
+    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, should_stem=True, using_pandas=False):
         self.jsonl_file = jsonl_file
 
         self.reviews = []
         self.tokenizer = tokenizer
         self.max_len = max_len
         self.should_stem = should_stem
+
+        if using_pandas:
+            self.train_df = pd.read_json(jsonl_file, lines=True)
+            self.train_df['label'] = self.train_df.iloc[:, 2]
+            self.train_df['text'] = self.train_df['text'].apply(clean_sentence)
+            self.train_df['label'] = self.train_df['label'].apply(lambda x: x-1)
+            self.train_df = self.train_df.drop(self.train_df.columns[[0, 2]], axis=1)
+            print(self.train_df)
 
         with jsonlines.open(self.jsonl_file) as reader:
             for obj in reader.iter(type=dict, skip_invalid=True):
@@ -28,7 +37,7 @@ class YelpDataset(Dataset):
                     review = obj["text"]
 
                     self.reviews.append({"input": review, "label": rating})
-                
+
 
         print("dataset loaded...")
 
@@ -47,16 +56,10 @@ class YelpDataset(Dataset):
 
         return {"input": np.array(review), "label": np.array(stars - 1)}
 
-    def getFromText(review, tokenizer, max_len=1000, should_stem=True):
-        review = tokenizer.tokenize2Index(review, should_stem)[:max_len]
-        if (len(review) < max_len):
-            review += [PAD_TOKEN]*(max_len-len(review))
-
-        return np.array(review)
 
     def split_dataset(self, training_partition: float, training_file: str, validation_file: str):
         assert training_partition > 0 and training_partition < 1, "Training partition must be a float between 0 and 1 non-exclusive"
-        
+
         num_train_examples = int(training_partition * len(self.reviews))
 
         random.shuffle(self.reviews)
@@ -72,9 +75,9 @@ class YelpDataset(Dataset):
         with open(validation_file, "w+") as val_f:
             for rev in tqdm(val_partition):
                 json.dump(rev, val_f)
-                val_f.write("\n")                
+                val_f.write("\n")
 
-    def make_datasets(self, tokenizer, max_length):
+    def make_datasets(self, tokenizer, max_length, x_path, y_path):
         x_train, y_train, x_val, y_val = [],[],[],[]
         num_reviews = len(self.reviews)
         for i in range(num_reviews):
@@ -89,7 +92,9 @@ class YelpDataset(Dataset):
             x_train.append(sequenced_review)
             y_train.append(rating_vector)
 
-        np.savetxt('x_train.txt', x_train, fmt ='%4d')
-        np.savetxt('y_train.txt', y_train, fmt='%4d')
+        np.savetxt(x_path, x_train, fmt ='%4d')
+        np.savetxt(y_path, y_train, fmt='%4d')
         return np.asarray(x_train), np.asarray(y_train)
+
+
 
