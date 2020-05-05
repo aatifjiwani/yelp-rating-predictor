@@ -103,7 +103,7 @@ class YelpDataset(Dataset):
         return np.asarray(x_train), np.asarray(y_train)
 
     def make_eval_pandas(self, num):
-        self.eval_df = pd.read_json(jsonl_file, lines=True)
+        self.eval_df = pd.read_json("yelp_challenge_" + str(num) + "_with_answers.jsonl", lines=True)
         self.eval_df['label'] = self.eval_df.iloc[:, 2]
         self.eval_df['text'] = self.eval_df['text'].apply(clean_sentence)
         self.eval_df['label'] = self.eval_df['label'].apply(lambda x: x - 1)
