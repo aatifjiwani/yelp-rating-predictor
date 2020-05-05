@@ -1,5 +1,5 @@
 import torch
-import torch.nn
+import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
@@ -50,12 +50,14 @@ class TorchTransformer(nn.Module):
         return mask
 
     def forward(self, inputs):
+        #inputs of shape B, Seq
+        inputs = self.input_embedding(inputs) * math.sqrt(self.model_dim) #B, S, Model_Dim
+        inputs.permute(1, 0, 2) #S, B, Model_Dim
+
         if self.curr_mask is None or self.curr_mask.shape[0] != inputs.shape[0]:
             curr_device = inputs.device
             self.curr_mask = self.generateMask(len(inputs)).to(curr_device)
-
         
-        inputs = self.input_embedding(inputs) * math.sqrt(self.model_dim)
         inputs = self.pos_encoder(inputs)
 
         outputs = self.transformer_encoder(inputs, self.curr_mask)

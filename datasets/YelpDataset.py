@@ -56,6 +56,12 @@ class YelpDataset(Dataset):
 
         return {"input": np.array(review), "label": np.array(stars - 1)}
 
+    def getFromText(review, tokenizer, max_len=1000, should_stem=True):	
+        review = tokenizer.tokenize2Index(review, should_stem)[:max_len]	
+        if (len(review) < max_len):	
+            review += [PAD_TOKEN]*(max_len-len(review))	
+
+        return np.array(review)
 
     def split_dataset(self, training_partition: float, training_file: str, validation_file: str):
         assert training_partition > 0 and training_partition < 1, "Training partition must be a float between 0 and 1 non-exclusive"

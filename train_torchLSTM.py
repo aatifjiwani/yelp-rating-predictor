@@ -1,4 +1,4 @@
-from models.pytorch_lstm import TorchBiLSTM
+from models import *
 from utils.pytorch_utils import *
 from embedders.embed import *
 from datasets.YelpDataset import YelpDataset
@@ -27,20 +27,20 @@ def train(logger):
     training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
     validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
 
-    embedder = Embedding(tokenizer)
-    embedder.load_embedding("embedders/embedding_refine.txt.refine") # embedder.load_embedding("embedders/embeddingsV1.txt")
-    embedding_matrix = torch.Tensor(embedder.embed(200))
+    #embedder = Embedding(tokenizer)
+    #embedder.load_embedding("embedders/embedding_refine.txt.refine") # embedder.load_embedding("embedders/embeddingsV1.txt")
+    #embedding_matrix = torch.Tensor(embedder.embed(200))
 
     logger.info("loaded dataset modules...")
 
     ## ------ Experiment Modules ------- ##
 
     epochs = 10
-    batch_size = 128
+    batch_size = 32
 
     patience=2
     delta = 0
-    checkpoint_file = "torch_bilstm_v4_nonstemembed"
+    checkpoint_file = "torch_transformer_v1"
     model_file = "model_plots/{}".format(checkpoint_file)
 
     logger.info("Expiriment name: {}".format(checkpoint_file))
@@ -48,10 +48,16 @@ def train(logger):
     training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=True)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
 
-    model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    vocab_size = len(tokenizer.word2Index)
+
+    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=256, num_heads=4, num_layers=2, num_classes=5, dropout=0.2).cuda()
+    #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.9)
+    # torch.optim.Adam(model.parameters(), lr=0.001)
     cross_entropy_loss = F.cross_entropy
-    early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
+
+    # early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
 
     logger.info("loaded experiment modules...")
 
@@ -63,7 +69,8 @@ def train(logger):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
         t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
-        # break
+        break
+
         v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
 
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
@@ -74,13 +81,14 @@ def train(logger):
         valid_losses.append(v_avg_loss)
         valid_accuracies.append(v_avg_acc)
 
-        early_stopping(v_avg_loss, model)
-        if early_stopping.early_stop:
-            print("EARLY STOPPING...")
-            break
+        optimizer_scheduler.step()
+        # early_stopping(v_avg_loss, model)
+        # if early_stopping.early_stop:
+        #     print("EARLY STOPPING...")
+        #     break
 
-    plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
-    plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
+    # plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
+    # plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
 
 def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
     total_loss = 0
@@ -95,6 +103,8 @@ def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
         reviews, targets = reviews.cuda(), targets.cuda()
 
         predicted_logits = model(reviews)
+        print(predicted_logits.shape)
+        break
         loss = loss_fn(predicted_logits, targets)
         # break
         loss.backward()
@@ -142,4 +152,4 @@ def compute_accuracy(logits, target, idx):
 
 if __name__ == "__main__":
     logger = createLogger()
-    train(logger)
+    # train(logger)
