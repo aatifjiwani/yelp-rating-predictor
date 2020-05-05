@@ -27,16 +27,16 @@ class YelpDataset(Dataset):
             self.train_df['label'] = self.train_df['label'].apply(lambda x: x-1)
             self.train_df = self.train_df.drop(self.train_df.columns[[0, 2]], axis=1)
             print(self.train_df)
+        else:
+            with jsonlines.open(self.jsonl_file) as reader:
+                for obj in reader.iter(type=dict, skip_invalid=True):
+                    if is_from_partition:
+                        self.reviews.append({"input": obj["input"], "label": obj["label"]})
+                    else:
+                        rating = obj["stars"]
+                        review = obj["text"]
 
-        with jsonlines.open(self.jsonl_file) as reader:
-            for obj in reader.iter(type=dict, skip_invalid=True):
-                if is_from_partition:
-                    self.reviews.append({"input": obj["input"], "label": obj["label"]})
-                else:
-                    rating = obj["stars"]
-                    review = obj["text"]
-
-                    self.reviews.append({"input": review, "label": rating})
+                        self.reviews.append({"input": review, "label": rating})
 
 
         print("dataset loaded...")
