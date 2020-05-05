@@ -14,7 +14,7 @@ except ImportError:
 class YelpDataset(Dataset):
     def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, should_stem=True, using_pandas=False):
         self.jsonl_file = jsonl_file
-
+        self.eval_df = None
         self.reviews = []
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -102,5 +102,11 @@ class YelpDataset(Dataset):
         np.savetxt(y_path, y_train, fmt='%4d')
         return np.asarray(x_train), np.asarray(y_train)
 
-
+    def make_eval_pandas(self, num):
+        self.eval_df = pd.read_json(jsonl_file, lines=True)
+        self.eval_df['label'] = self.eval_df.iloc[:, 2]
+        self.eval_df['text'] = self.eval_df['text'].apply(clean_sentence)
+        self.eval_df['label'] = self.eval_df['label'].apply(lambda x: x - 1)
+        self.eval_df = self.eval_df.drop(self.eval_df.columns[[0, 2]], axis=1)
+        print(self.eval_df)
 
