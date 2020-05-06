@@ -8,6 +8,8 @@ class TorchTransformer(nn.Module):
 
     def __init__(self, vocab, model_dim, ff_dim, num_heads, num_layers, num_classes, dropout=0.45, ds_init=0.9):
         
+        super(TorchTransformer, self).__init__()
+
         self.vocab = vocab
         self.model_dim = model_dim
         self.num_classes = num_classes
@@ -61,6 +63,10 @@ class TorchTransformer(nn.Module):
         inputs = self.pos_encoder(inputs)
 
         outputs = self.transformer_encoder(inputs, self.curr_mask)
+
+        #outputs of size B, S, Hidden_Dim
+        outputs = torch.mean(outputs, dim=1) #B, Hidden_Dim
+
         outputs = self.decoder(outputs)
 
         return outputs
@@ -80,12 +86,12 @@ class PositionalEncoder(nn.Module):
         positional_encoder[:, 0::2] = torch.sin(positions * denom)
         positional_encoder[:, 1::2] = torch.cos(positions * denom)
 
-        pe = pe.unsqueeze(0).transpose(0, 1)
+        positional_encoder = positional_encoder.unsqueeze(0).transpose(0, 1)
 
-        self.register_buffer('pe', pe)
+        self.register_buffer('positional_encoder', positional_encoder)
 
     def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
+        x = x + self.positional_encoder[:x.size(0), :]
         return self.dropout(x)
 
 

@@ -4,6 +4,39 @@ import matplotlib.pyplot as plt
 import torch
 import os
 
+
+# https://github.com/pytorch/fairseq/blob/master/fairseq/optim/lr_scheduler/inverse_square_root_schedule.py
+class WarmupLearninngRate:
+    def __init__(self, optimizer, warmup_steps = 16000, init_lr=0.01, end_lr=0.2):
+
+        # linearly warmup for the first args.warmup_updates
+        self.init_lr = init_lr
+        self.end_lr = end_lr
+        self.warmup_steps = warmup_steps
+        self.lr_step = (end_lr - init_lr) / warmup_steps
+
+        # then, decay prop. to the inverse square root of the update number
+        self.decay_factor = end_lr * warmup_steps**0.5
+
+        # initial learning rate
+        self.lr = init_lr
+        self.optimizer = optimizer
+
+        self.optimizer.param_groups[0]['lr'] = self.lr
+        self.num_updates = 0
+
+    def step_update(self):
+        """Update the learning rate after each update."""
+        if self.num_updates < self.warmup_steps:
+            self.lr = self.init_lr + self.num_updates*self.lr_step
+        else:
+            self.lr = self.decay_factor * self.num_updates**-0.5
+
+        self.num_updates += 1
+        self.optimizer.param_groups[0]['lr'] = self.lr
+
+        return self.lr
+
 #  # https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
 class EarlyStopping: 
     """Early stops the training if validation loss doesn't improve after a given patience."""

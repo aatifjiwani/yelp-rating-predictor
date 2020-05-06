@@ -11,6 +11,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import logging
 
+## https://arxiv.org/pdf/1804.00247.pdf Warmup training for transformer
+
 def createLogger():
     console_logging_format = "%(levelname)s %(message)s"
     logging.basicConfig(level=logging.INFO, format=console_logging_format)
@@ -36,7 +38,7 @@ def train(logger):
     ## ------ Experiment Modules ------- ##
 
     epochs = 10
-    batch_size = 32
+    batch_size = 64
 
     patience=2
     delta = 0
@@ -53,7 +55,7 @@ def train(logger):
     model = TorchTransformer(vocab_size, model_dim=256, ff_dim=256, num_heads=4, num_layers=2, num_classes=5, dropout=0.2).cuda()
     #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.9)
+    optimizer_scheduler = WarmupLearninngRate(optimizer, warmup_steps = 30000, init_lr=0.001) # torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.9)
     # torch.optim.Adam(model.parameters(), lr=0.001)
     cross_entropy_loss = F.cross_entropy
 
@@ -68,20 +70,19 @@ def train(logger):
     for epoch in range(epochs):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
-        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, cross_entropy_loss, epoch + 1)
-        break
+        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, optimizer_scheduler, cross_entropy_loss, epoch + 1)
 
-        v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
+        # v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
 
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
-        print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
+        # print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
         
         training_losses.append(t_avg_loss)
         training_accuracies.append(t_avg_acc)
-        valid_losses.append(v_avg_loss)
-        valid_accuracies.append(v_avg_acc)
+        # valid_losses.append(v_avg_loss)
+        # valid_accuracies.append(v_avg_acc)
 
-        optimizer_scheduler.step()
+        # optimizer_scheduler.step()
         # early_stopping(v_avg_loss, model)
         # if early_stopping.early_stop:
         #     print("EARLY STOPPING...")
@@ -90,7 +91,7 @@ def train(logger):
     # plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
     # plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
 
-def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
+def train_epoch(model, train_loader, optimizer, scheduler, loss_fn, epoch):
     total_loss = 0
     total_accuracy = 0
     loader = tqdm(train_loader)
@@ -103,19 +104,19 @@ def train_epoch(model, train_loader, optimizer, loss_fn, epoch):
         reviews, targets = reviews.cuda(), targets.cuda()
 
         predicted_logits = model(reviews)
-        print(predicted_logits.shape)
-        break
+
         loss = loss_fn(predicted_logits, targets)
-        # break
+
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         total_loss += loss.item()
         curr_accuracy = compute_accuracy(predicted_logits, targets, idx).item()
         total_accuracy += curr_accuracy
 
         avg_loss = total_loss / (idx + 1)
-        loader.set_description("TRAIN - Avg Loss: %.4f; Curr. Accuracy: %.6f;" % (avg_loss, curr_accuracy*100) )
+        loader.set_description("TRAIN - Avg Loss: %.4f; Curr. Accuracy: %.6f; LR: %.4f" % (avg_loss, curr_accuracy*100, optimizer.param_groups[0]['lr']) )
     
     return avg_loss, total_accuracy / (idx + 1)
 
@@ -152,4 +153,4 @@ def compute_accuracy(logits, target, idx):
 
 if __name__ == "__main__":
     logger = createLogger()
-    # train(logger)
+    train(logger)
