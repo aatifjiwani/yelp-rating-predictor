@@ -6,7 +6,7 @@ import math
 
 class TorchTransformer(nn.Module):
 
-    def __init__(self, vocab, model_dim, ff_dim, num_heads, num_layers, num_classes, dropout=0.45, ds_init=0.9):
+    def __init__(self, vocab, model_dim, ff_dim, num_heads, num_layers, num_classes, max_len=1000, dropout=0.45, ds_init=0.9, cls_token=False):
         
         super(TorchTransformer, self).__init__()
 
@@ -15,9 +15,10 @@ class TorchTransformer(nn.Module):
         self.num_classes = num_classes
         self.num_layers = num_layers
         self.ds_init = ds_init
+        self.cls_token = cls_token
 
         self.input_embedding = nn.Embedding(vocab, model_dim)
-        self.pos_encoder = PositionalEncoder(model_dim)
+        self.pos_encoder = PositionalEncoder(model_dim, max_len=max_len)
 
         transformer_encoder_layer = nn.TransformerEncoderLayer(model_dim, num_heads, ff_dim, dropout)
         self.transformer_encoder = nn.TransformerEncoder(transformer_encoder_layer, num_layers)
@@ -64,8 +65,12 @@ class TorchTransformer(nn.Module):
 
         outputs = self.transformer_encoder(inputs, self.curr_mask)
 
-        #outputs of size B, S, Hidden_Dim
-        outputs = torch.mean(outputs, dim=1) #B, Hidden_Dim
+        #outputs of size B, S, Hidden_Dim (#CLS IS AT SEQUENCE 0 if using CLS)
+        if self.cls_token:
+            outputs = outputs[:, 0, :] #(B, H)
+        else:
+            outputs = torch.mean(outputs, dim=1) #B, Hidden_Dim
+        # 
 
         outputs = self.decoder(outputs)
 

@@ -25,7 +25,7 @@ class WarmupLearninngRate:
         self.optimizer.param_groups[0]['lr'] = self.lr
         self.num_updates = 0
 
-    def step_update(self):
+    def step(self):
         """Update the learning rate after each update."""
         if self.num_updates < self.warmup_steps:
             self.lr = self.init_lr + self.num_updates*self.lr_step

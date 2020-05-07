@@ -26,8 +26,9 @@ def train(logger):
 
     tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
 
-    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
-    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True)
+    # 999 for usage of CLS token. 1000 if otherwise. Make sure to set add_cls=True if using CLS token
+    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True, add_cls=False)
+    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True, add_cls=False)
 
     #embedder = Embedding(tokenizer)
     #embedder.load_embedding("embedders/embedding_refine.txt.refine") # embedder.load_embedding("embedders/embeddingsV1.txt")
@@ -37,29 +38,27 @@ def train(logger):
 
     ## ------ Experiment Modules ------- ##
 
-    epochs = 10
+    epochs = 15
     batch_size = 64
 
-    patience=2
+    patience=3
     delta = 0
     checkpoint_file = "torch_transformer_v1"
     model_file = "model_plots/{}".format(checkpoint_file)
 
     logger.info("Expiriment name: {}".format(checkpoint_file))
 
-    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=True)
+    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=False)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
 
-    vocab_size = len(tokenizer.word2Index)
+    vocab_size = len(tokenizer.word2Index) # + 1 #CLS TOKEN
 
-    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=256, num_heads=4, num_layers=2, num_classes=5, dropout=0.2).cuda()
-    #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    optimizer_scheduler = WarmupLearninngRate(optimizer, warmup_steps = 30000, init_lr=0.001) # torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.9)
-    # torch.optim.Adam(model.parameters(), lr=0.001)
+    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, dropout=0.2).cuda() #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1) # torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.99) #WarmupLearninngRate(optimizer, warmup_steps = 14000, init_lr=0.07) 
     cross_entropy_loss = F.cross_entropy
 
-    # early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
+    early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
 
     logger.info("loaded experiment modules...")
 
@@ -70,26 +69,25 @@ def train(logger):
     for epoch in range(epochs):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
-        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, optimizer_scheduler, cross_entropy_loss, epoch + 1)
-
-        # v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
+        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, None, cross_entropy_loss, epoch + 1)
+        v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
 
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
-        # print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
+        print("Val Loss: {}; Val Acc: {};".format(v_avg_loss, v_avg_acc*100))
         
         training_losses.append(t_avg_loss)
         training_accuracies.append(t_avg_acc)
-        # valid_losses.append(v_avg_loss)
-        # valid_accuracies.append(v_avg_acc)
+        valid_losses.append(v_avg_loss)
+        valid_accuracies.append(v_avg_acc)
 
-        # optimizer_scheduler.step()
-        # early_stopping(v_avg_loss, model)
-        # if early_stopping.early_stop:
-        #     print("EARLY STOPPING...")
-        #     break
+        optimizer_scheduler.step()
+        early_stopping(v_avg_loss, model)
+        if early_stopping.early_stop:
+            print("EARLY STOPPING...")
+            break
 
-    # plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
-    # plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
+    plot_and_save(training_losses, valid_losses, "Model Losses", "Loss", model_file + "_loss")
+    plot_and_save(training_accuracies, valid_accuracies, "Model Accuracies", "Acc", model_file + "_acc")
 
 def train_epoch(model, train_loader, optimizer, scheduler, loss_fn, epoch):
     total_loss = 0
@@ -109,14 +107,18 @@ def train_epoch(model, train_loader, optimizer, scheduler, loss_fn, epoch):
 
         loss.backward()
         optimizer.step()
-        scheduler.step()
+
+        if scheduler is not None:
+            scheduler.step()
 
         total_loss += loss.item()
         curr_accuracy = compute_accuracy(predicted_logits, targets, idx).item()
         total_accuracy += curr_accuracy
 
         avg_loss = total_loss / (idx + 1)
-        loader.set_description("TRAIN - Avg Loss: %.4f; Curr. Accuracy: %.6f; LR: %.4f" % (avg_loss, curr_accuracy*100, optimizer.param_groups[0]['lr']) )
+
+        loader.set_description("TRAIN - Avg Loss: %.4f; Curr. Accuracy: %.6f; LR: %.4f" % (avg_loss, curr_accuracy*100, \
+                                                                                                optimizer.param_groups[0]['lr']) )
     
     return avg_loss, total_accuracy / (idx + 1)
 

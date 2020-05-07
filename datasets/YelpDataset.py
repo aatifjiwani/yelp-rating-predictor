@@ -12,13 +12,14 @@ except ImportError:
     from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
-    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, should_stem=True, using_pandas=False):
+    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, add_cls=False, should_stem=True, using_pandas=False):
         self.jsonl_file = jsonl_file
         self.eval_df = None
         self.reviews = []
         self.tokenizer = tokenizer
         self.max_len = max_len
         self.should_stem = should_stem
+        self.add_cls = add_cls
 
         if using_pandas:
             self.train_df = pd.read_json(jsonl_file, lines=True)
@@ -53,6 +54,9 @@ class YelpDataset(Dataset):
         review = self.tokenizer.tokenize2Index(review, self.should_stem)[:self.max_len]
         if (len(review) < self.max_len):
             review += [PAD_TOKEN]*(self.max_len-len(review))
+
+        if self.add_cls:
+            review = [0] + [x + 1 for x in review] #SET CLS TOKEN TO 0 AND PUSH EVERYTHING DOWN BY 1
 
         return {"input": np.array(review), "label": np.array(stars - 1)}
 
