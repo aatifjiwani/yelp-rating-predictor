@@ -12,7 +12,8 @@ except ImportError:
     from datasets.vocab_gen import *
 
 class YelpDataset(Dataset):
-    def __init__(self, jsonl_file:str, tokenizer:Tokenizer=None, max_len:int = 50, is_from_partition=False, add_cls=False, should_stem=True, using_pandas=False):
+    def __init__(self, jsonl_file:str, tokenizer=None, max_len:int = 50, is_from_partition=False, add_cls=False, 
+                should_stem=True, using_pandas=False, using_bpe=False):
         self.jsonl_file = jsonl_file
         self.eval_df = None
         self.reviews = []
@@ -56,7 +57,7 @@ class YelpDataset(Dataset):
             review += [PAD_TOKEN]*(self.max_len-len(review))
 
         if self.add_cls:
-            review = [0] + [x + 1 for x in review] #SET CLS TOKEN TO 0 AND PUSH EVERYTHING DOWN BY 1
+            review = [len(self.tokenizer.word2Index)] + [x + 1 for x in review] #SET CLS TOKEN TO 0 AND PUSH EVERYTHING DOWN BY 1
 
         return {"input": np.array(review), "label": np.array(stars - 1)}
 
@@ -114,4 +115,15 @@ class YelpDataset(Dataset):
         self.eval_df['label'] = self.eval_df['label'].apply(lambda x: x - 1)
         self.eval_df = self.eval_df.drop(self.eval_df.columns[[0, 2]], axis=1)
         print(self.eval_df)
+
+if __name__ == "__main__":
+    training_yelp = YelpDataset("yelp_review_training_dataset.jsonl", tokenizer=None, max_len=1000, is_from_partition=False, add_cls=False)
+    with open("cleaned_reviews.txt", "w+") as f:
+        for rev in tqdm(training_yelp.reviews):
+            cleaned_review = clean_sentence(rev["input"].lower())
+            
+            f.write(cleaned_review + "\n")
+            
+
+
 

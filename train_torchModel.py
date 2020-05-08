@@ -38,12 +38,12 @@ def train(logger):
 
     ## ------ Experiment Modules ------- ##
 
-    epochs = 15
+    epochs = 10
     batch_size = 64
 
-    patience=3
+    patience=2
     delta = 0
-    checkpoint_file = "torch_transformer_v1"
+    checkpoint_file = "torch_transformer_v2_weight"
     model_file = "model_plots/{}".format(checkpoint_file)
 
     logger.info("Expiriment name: {}".format(checkpoint_file))
@@ -51,12 +51,14 @@ def train(logger):
     training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=False)
     validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
 
-    vocab_size = len(tokenizer.word2Index) # + 1 #CLS TOKEN
+    vocab_size = len(tokenizer.word2Index) #CLS TOKEN
 
-    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, dropout=0.2).cuda() #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, max_len=1000, dropout=0.2, cls_token=False).cuda() #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1) # torch.optim.Adam(model.parameters(), lr=0.001)
-    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.99) #WarmupLearninngRate(optimizer, warmup_steps = 14000, init_lr=0.07) 
-    cross_entropy_loss = F.cross_entropy
+    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.85) #WarmupLearninngRate(optimizer, warmup_steps = 14000, init_lr=0.07) 
+    
+    review_weight = torch.Tensor(np.array([ 0.8, 1.4, 1.4, 1.2, 0.8 ]))
+    cross_entropy_loss = nn.CrossEntropyLoss(weight=review_weight).cuda()
 
     early_stopping = EarlyStopping(patience=patience, delta=delta, verbose=True, checkpoint_file=checkpoint_file+".pt")
 
@@ -102,9 +104,7 @@ def train_epoch(model, train_loader, optimizer, scheduler, loss_fn, epoch):
         reviews, targets = reviews.cuda(), targets.cuda()
 
         predicted_logits = model(reviews)
-
         loss = loss_fn(predicted_logits, targets)
-
         loss.backward()
         optimizer.step()
 

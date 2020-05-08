@@ -149,3 +149,6 @@ embedded.txt.refine
 
 model_checkpoints/
 model_plots/
+
+datasets/yelp_bpe/*
+cleaned_reviews.txt

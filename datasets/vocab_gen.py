@@ -9,6 +9,9 @@ from nltk import RegexpTokenizer
 from nltk.stem import SnowballStemmer
 # nltk.download('punkt')
 
+from tokenizers import ByteLevelBPETokenizer
+from tokenizers.processors import RobertaProcessing
+from transformers import RobertaTokenizer, RobertaForMaskedLM
 from segtok import tokenizer
 
 from collections import Counter
@@ -53,6 +56,32 @@ class Tokenizer():
 
     def index2words(self, logits):
         pass
+
+class ByteBPETokenizer:
+    def __init__(self, vocab_json, merge_txt):
+        self.tokenizer = ByteLevelBPETokenizer(vocab_json, merge_txt)
+        self.tokenizer.enable_truncation(max_length=100)
+        self.tokenizer.enable_padding(max_length=100)
+        self.tokenizer.add_special_tokens(["[SEP]", "[CLS]"])
+        self.tokenizer.post_processor = RobertaProcessing(("[SEP]", 1), ("[CLS]", 2))
+        # self.tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+
+    def encode(self, review):
+        review = clean_sentence(review)
+        encoded = self.tokenizer.encode(review.lower())
+        
+        return encoded
+
+    def tokenize2Index(self, review):
+        encoded = self.encode(review)
+
+        return encoded.ids
+
+    def trainBPE(self, paths, vocab_size=30000, min_frequency=10, special_tokens=["[UNK]" "[CLS]"]):
+        tokenizer = ByteLevelBPETokenizer()
+        tokenizer.train(files=paths, vocab_size=vocab_size, min_frequency=min_frequency, special_tokens=special_tokens)
+        tokenizer.save("yelp_bpe/", "yelp-bpe")
+
 
 class VocabularyGenerator():
 
@@ -146,7 +175,7 @@ if __name__ == "__main__":
     sent = "what's http://youtu.be/By-A7AN4jEA i've don't i'm you're i'd i'll we love Dr. B, Gibi and the entire Elite Family!!!!!! \
         \nThey all take such great care of our family!!!! Recommend scheduling your appointments soon!!\n\nThank you for all \
         you do for us.. Love you all.. 11th 111lbs 1123423am -blah .awdnw 'awdkawdn \awdawd 1234567891234"
-    v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary_nostem.txt")
+    # v = VocabularyGenerator("yelp_review_training_dataset.jsonl", "vocabulary_nostem.txt")
     # review = token.tokenize(sent.lower())
     
     # cleaned = clean_sentence(sent)
@@ -159,13 +188,20 @@ if __name__ == "__main__":
     # print(" ".join([stemmer.stem(word) for word in cleaned.split()]))
 
     # print(review)
-    v.parse_words()
-    v.save_vocabulary()
+    # v.parse_words()
+    # v.save_vocabulary()
 
     # t = Tokenizer("tokenizer", "vocabulary.txt")
     # print(len(t.word2Index))
 
-    # print(t.tokenize2Index("I really loved this meal and it was so yummy. I would go to this place again bitch supercalifragilistic"))
+    
+    bpe = ByteBPETokenizer("yelp_bpe/yelp-bpe-vocab.json", "yelp_bpe/yelp-bpe-merges.txt")
+    enc = bpe.encode("!!! Absolutely the best service I've ever had. Dion, the tremendous manager was courteous and outstanding during an event at this location. The food was perfectly cooked and drinks were always full. The five cheese ziti may be gone, but the pasta still ranks supreme in this wonderfully fun location.")
+    print(enc.ids, enc.tokens)
+    # bpe.trainBPE(paths=["cleaned_reviews.txt"], vocab_size=25000)
+    
+
+
 
 
 
