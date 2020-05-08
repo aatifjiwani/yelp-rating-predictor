@@ -62,14 +62,14 @@ class ByteBPETokenizer:
         self.tokenizer = ByteLevelBPETokenizer(vocab_json, merge_txt)
         self.tokenizer.enable_truncation(max_length=100)
         self.tokenizer.enable_padding(max_length=100)
-        self.tokenizer.add_special_tokens(["[SEP]", "[CLS]"])
-        self.tokenizer.post_processor = RobertaProcessing(("[SEP]", 1), ("[CLS]", 2))
+        self.tokenizer.add_special_tokens(["[PAD]", "[CLS]"])
+        # self.tokenizer.post_processor = RobertaProcessing(("</s>", 2), ("<s>", 1))
         # self.tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 
     def encode(self, review):
         review = clean_sentence(review)
         encoded = self.tokenizer.encode(review.lower())
-        
+        # pp_encoded = self.tokenizer.post_process(encoded)
         return encoded
 
     def tokenize2Index(self, review):
@@ -77,7 +77,7 @@ class ByteBPETokenizer:
 
         return encoded.ids
 
-    def trainBPE(self, paths, vocab_size=30000, min_frequency=10, special_tokens=["[UNK]" "[CLS]"]):
+    def trainBPE(self, paths, vocab_size=30000, min_frequency=10, special_tokens=["[PAD]", "[CLS]"]):
         tokenizer = ByteLevelBPETokenizer()
         tokenizer.train(files=paths, vocab_size=vocab_size, min_frequency=min_frequency, special_tokens=special_tokens)
         tokenizer.save("yelp_bpe/", "yelp-bpe")
