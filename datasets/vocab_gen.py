@@ -58,10 +58,10 @@ class Tokenizer():
         pass
 
 class ByteBPETokenizer:
-    def __init__(self, vocab_json, merge_txt):
+    def __init__(self, vocab_json, merge_txt, max_length=750):
         self.tokenizer = ByteLevelBPETokenizer(vocab_json, merge_txt)
-        self.tokenizer.enable_truncation(max_length=100)
-        self.tokenizer.enable_padding(max_length=100)
+        self.tokenizer.enable_truncation(max_length=max_length)
+        self.tokenizer.enable_padding(max_length=max_length)
         self.tokenizer.add_special_tokens(["[PAD]", "[CLS]"])
         # self.tokenizer.post_processor = RobertaProcessing(("</s>", 2), ("<s>", 1))
         # self.tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
@@ -72,7 +72,7 @@ class ByteBPETokenizer:
         # pp_encoded = self.tokenizer.post_process(encoded)
         return encoded
 
-    def tokenize2Index(self, review):
+    def tokenize2Index(self, review, should_stem=False):
         encoded = self.encode(review)
 
         return encoded.ids
@@ -194,10 +194,15 @@ if __name__ == "__main__":
     # t = Tokenizer("tokenizer", "vocabulary.txt")
     # print(len(t.word2Index))
 
-    
-    bpe = ByteBPETokenizer("yelp_bpe/yelp-bpe-vocab.json", "yelp_bpe/yelp-bpe-merges.txt")
-    enc = bpe.encode("!!! Absolutely the best service I've ever had. Dion, the tremendous manager was courteous and outstanding during an event at this location. The food was perfectly cooked and drinks were always full. The five cheese ziti may be gone, but the pasta still ranks supreme in this wonderfully fun location.")
-    print(enc.ids, enc.tokens)
+    # print(clean_sentence("I really enjoyed my stay at this hotel on 5/12/2020!! This is jibberish abcd but here is this cool website: https://www.berkeley.edu"))
+    sent = "I really enjoyed my stay at this hotel on five one two two zero two zero ! !  I am sure we will come again! Do not mind this jibberish abcd but here is this cool website :"
+    stemmer = SnowballStemmer("english")
+    cleaned_review = " ".join([stemmer.stem(word) for word in sent.split()])
+    tokenized_review = tokenizer.word_tokenizer(cleaned_review)
+    print(tokenized_review)
+    # bpe = ByteBPETokenizer("yelp_bpe/yelp-bpe-vocab.json", "yelp_bpe/yelp-bpe-merges.txt")
+    # enc = bpe.encode("I really enjoyed my stay at this hotel on 5/12/2020!! This is jibberish abcd but here is this cool website: https://www.berkeley.edu")
+    # print(enc.tokens)
     # bpe.trainBPE(paths=["cleaned_reviews.txt"], vocab_size=25000)
     
 

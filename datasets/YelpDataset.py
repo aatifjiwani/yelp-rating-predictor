@@ -118,12 +118,15 @@ class YelpDataset(Dataset):
 
 if __name__ == "__main__":
     training_yelp = YelpDataset("yelp_review_training_dataset.jsonl", tokenizer=None, max_len=1000, is_from_partition=False, add_cls=False)
-    with open("cleaned_reviews.txt", "w+") as f:
-        for rev in tqdm(training_yelp.reviews):
-            cleaned_review = clean_sentence(rev["input"].lower())
-            
-            f.write(cleaned_review + "\n")
-            
+    # with open("cleaned_reviews.txt", "w+") as f:
+    len_words = 0
+    count = 0
+    for rev in tqdm(training_yelp.reviews):
+        cleaned_review = clean_sentence(rev["input"].lower()).split()
+        len_words += len(cleaned_review)
+        count += 1
+
+    print(len_words / count)            
 
 
 

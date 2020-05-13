@@ -7,7 +7,7 @@ import os
 
 # https://github.com/pytorch/fairseq/blob/master/fairseq/optim/lr_scheduler/inverse_square_root_schedule.py
 class WarmupLearninngRate:
-    def __init__(self, optimizer, warmup_steps = 16000, init_lr=0.01, end_lr=0.2):
+    def __init__(self, optimizer, warmup_steps = 16000, init_lr=0.01, end_lr=0.15, decay_factor=0.9):
 
         # linearly warmup for the first args.warmup_updates
         self.init_lr = init_lr
@@ -25,7 +25,23 @@ class WarmupLearninngRate:
         self.optimizer.param_groups[0]['lr'] = self.lr
         self.num_updates = 0
 
-    def step(self):
+        self.decay_factor = decay_factor
+        self.step = self.step_warmup_decay
+
+    def step_warmup_decay(self, epoch=False):
+        """Update the learning rate after each update."""
+        if self.num_updates < self.warmup_steps:
+            self.lr = self.init_lr + self.num_updates*self.lr_step
+        else:
+            if epoch:
+                self.lr = self.lr * self.decay_factor
+
+        self.num_updates += 1
+        self.optimizer.param_groups[0]['lr'] = self.lr
+
+        return self.lr
+
+    def step_warmup_exp(self, epoch=False):
         """Update the learning rate after each update."""
         if self.num_updates < self.warmup_steps:
             self.lr = self.init_lr + self.num_updates*self.lr_step

@@ -2,7 +2,7 @@ from models import *
 from utils.pytorch_utils import *
 from embedders.embed import *
 from datasets.YelpDataset import YelpDataset
-from datasets.vocab_gen import Tokenizer
+from datasets.vocab_gen import Tokenizer, ByteBPETokenizer
 
 import torch
 import torch.nn as nn
@@ -24,11 +24,12 @@ def train(logger):
     
     ## ------ Dataset Modules ------- ##
 
-    tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
+    # tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
+    tokenizer = ByteBPETokenizer("datasets/yelp_bpe/yelp-bpe-vocab.json", "datasets/yelp_bpe/yelp-bpe-merges.txt", max_length=250)
 
     # 999 for usage of CLS token. 1000 if otherwise. Make sure to set add_cls=True if using CLS token
-    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True, add_cls=False)
-    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=True, add_cls=False)
+    training_yelp = YelpDataset("datasets/yelp_training.jsonl", tokenizer=tokenizer, max_len=250, is_from_partition=True, add_cls=False)
+    validation_yelp = YelpDataset("datasets/yelp_validation.jsonl", tokenizer=tokenizer, max_len=250, is_from_partition=True, add_cls=False)
 
     #embedder = Embedding(tokenizer)
     #embedder.load_embedding("embedders/embedding_refine.txt.refine") # embedder.load_embedding("embedders/embeddingsV1.txt")
@@ -39,23 +40,23 @@ def train(logger):
     ## ------ Experiment Modules ------- ##
 
     epochs = 10
-    batch_size = 64
+    batch_size = 32
 
     patience=2
     delta = 0
-    checkpoint_file = "torch_transformer_v2_weight"
+    checkpoint_file = "torch_transformer_v5_weight_BPE"
     model_file = "model_plots/{}".format(checkpoint_file)
 
     logger.info("Expiriment name: {}".format(checkpoint_file))
 
-    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=4, shuffle=False)
-    validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=4)
+    training_loader = torch.utils.data.DataLoader(training_yelp, batch_size=batch_size, num_workers=8, shuffle=False)
+    validation_loader = torch.utils.data.DataLoader(validation_yelp, batch_size=batch_size, num_workers=8)
 
-    vocab_size = len(tokenizer.word2Index) #CLS TOKEN
+    vocab_size = 25000 #len(tokenizer.word2Index) #CLS TOKEN
 
-    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, max_len=1000, dropout=0.2, cls_token=False).cuda() #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    model = TorchTransformer(vocab_size, model_dim=256, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, max_len=250, dropout=0.3, cls_token=False).cuda() #TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1) # torch.optim.Adam(model.parameters(), lr=0.001)
-    optimizer_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.85) #WarmupLearninngRate(optimizer, warmup_steps = 14000, init_lr=0.07) 
+    optimizer_scheduler = WarmupLearninngRate(optimizer, warmup_steps = 10000, init_lr=0.07) #torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.9) 
     
     review_weight = torch.Tensor(np.array([ 0.8, 1.4, 1.4, 1.2, 0.8 ]))
     cross_entropy_loss = nn.CrossEntropyLoss(weight=review_weight).cuda()
@@ -71,7 +72,7 @@ def train(logger):
     for epoch in range(epochs):
         print("Starting Epoch {}/{}".format(epoch+1, epochs))
 
-        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, None, cross_entropy_loss, epoch + 1)
+        t_avg_loss, t_avg_acc = train_epoch(model, training_loader, optimizer, optimizer_scheduler, cross_entropy_loss, epoch + 1)
         v_avg_loss, v_avg_acc = val_epoch(model, validation_loader, cross_entropy_loss, epoch+1)
 
         print("Completed Epoch {} Stats:\n Train Loss: {}; Train Acc: {};".format(epoch+1, t_avg_loss, t_avg_acc*100))
@@ -82,7 +83,7 @@ def train(logger):
         valid_losses.append(v_avg_loss)
         valid_accuracies.append(v_avg_acc)
 
-        optimizer_scheduler.step()
+        # optimizer_scheduler.step()
         early_stopping(v_avg_loss, model)
         if early_stopping.early_stop:
             print("EARLY STOPPING...")

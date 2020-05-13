@@ -1,8 +1,8 @@
-from models.pytorch_lstm import TorchBiLSTM
+from models import *
 from utils.pytorch_utils import *
 from embedders.embed import *
 from datasets.YelpDataset import YelpDataset
-from datasets.vocab_gen import Tokenizer
+from datasets.vocab_gen import *
 
 import torch
 import torch.nn as nn
@@ -47,10 +47,12 @@ def test_with_answers(logger):
     
     ## ------ Dataset Modules ------- ##
 
-    tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
-    testing_yelp = YelpDataset("datasets/yelp_challenge_6.jsonl", tokenizer=tokenizer, max_len=1000, is_from_partition=False)
+    base_tokenizer = Tokenizer("global", "datasets/vocabulary.txt")
+    bpe_tokenizer = ByteBPETokenizer("datasets/yelp_bpe/yelp-bpe-vocab.json", "datasets/yelp_bpe/yelp-bpe-merges.txt", max_length=250)
+    base_yelp = YelpDataset("datasets/yelp_challenge_3.jsonl", tokenizer=base_tokenizer, max_len=1000, is_from_partition=False)
+    bpe_yelp = YelpDataset("datasets/yelp_challenge_3.jsonl", tokenizer=bpe_tokenizer, max_len=250, is_from_partition=False)
 
-    embedder = Embedding(tokenizer)
+    embedder = Embedding(base_tokenizer)
     embedder.load_embedding("embedders/embeddingsV1.txt")
     embedding_matrix = torch.Tensor(embedder.embed(200))
 
@@ -59,41 +61,96 @@ def test_with_answers(logger):
     ## ------ Experiment Modules ------- ##
 
     batch_size = 1
-    checkpoint_file = "torch_bilstm_v3_lr1e3.pt"
+    trans_checkpoint_file = "torch_transformer_v4_weight_BPE.pt"
+    trans_model = TorchTransformer(25000, model_dim=360, ff_dim=512, num_heads=4, num_layers=4, num_classes=5, max_len=250, dropout=0.3, cls_token=False).cuda() 
+    trans_model.load_state_dict(torch.load("model_checkpoints/{}".format(trans_checkpoint_file)))
+    trans_model.eval()
 
-    test_loader = torch.utils.data.DataLoader(testing_yelp, batch_size=batch_size, num_workers=2, shuffle=False)
+    lstm_checkpoint_file = "torch_bilstm_v3_lr1e3.pt"
+    lstm_model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
+    lstm_model.load_state_dict(torch.load("model_checkpoints/{}".format(lstm_checkpoint_file)))
+    lstm_model.eval()
 
-    model = TorchBiLSTM(embedding_matrix, hidden_size=128, dropout=0.2).cuda()
-    model.load_state_dict(torch.load("model_checkpoints/{}".format(checkpoint_file)))
-    model.eval()
+    bert_model = PretrainedBert()
+    bert_model.load('model_checkpoints/checkpoint-30000') 
 
     ## ------ Testing ----- ##
 
     logger.info("loaded experiment modules...")
 
-    loader = tqdm(test_loader)
+    groundtruth_stars = np.array([int(base_yelp.reviews[x]['label']) - 1 for x in range(len(base_yelp))])
 
+    bert_reviews = [clean_sentence(base_yelp.reviews[x]['input']) for x in range(len(base_yelp))]
+    bert_eval = eval_bert(bert_model, bert_reviews)
 
-    total_examples = 0
-    mean_abs_error = 0
-    mean_accuracy = 0
+    base_loader = torch.utils.data.DataLoader(base_yelp, batch_size=len(base_yelp), num_workers=4, shuffle=False)    
+    loader = tqdm(base_loader)
+
     for idx, inputs in enumerate(loader):
         reviews, targets = inputs["input"], inputs["label"]
         reviews, targets = reviews.cuda(), targets.cuda()
 
-        predicted_logits = model(reviews).argmax(dim=1, keepdim=True)
-        targets = targets.view_as(predicted_logits)
-        
-        abs_error = (predicted_logits - targets).sum()
-        accuracy = predicted_logits.eq(targets).sum()
+        predicted_logits = lstm_model(reviews).argmax(dim=1, keepdim=True)
+        lstm_eval = np.squeeze(predicted_logits.cpu().numpy())
 
-        mean_abs_error += abs(abs_error.item())
-        mean_accuracy += accuracy.item()
-        total_examples += reviews.shape[0]
+    bpe_loader = torch.utils.data.DataLoader(bpe_yelp, batch_size=32, num_workers=4, shuffle=False)    
+    b_loader = tqdm(bpe_loader)
+    trans_eval = np.array([])
+
+    for idx, inputs in enumerate(b_loader):
+        reviews, targets = inputs["input"], inputs["label"]
+        reviews, targets = reviews.cuda(), targets.cuda()
+
+        predicted_logits = trans_model(reviews).argmax(dim=1, keepdim=True)
+        trans_eval = np.append(trans_eval, predicted_logits.cpu().numpy())
+
+    # print(bert_eval.shape)
+    # print(lstm_eval.shape)
+    # print(trans_eval.shape)
+
+    # print(bert_eval[:25])
+    # print(lstm_eval[:25])
+    # print(trans_eval[:25])
+
+    total_examples = len(groundtruth_stars)
+    mean_abs_error = 0
+    mean_accuracy = 0
+    for idx in tqdm(range(len(bert_eval))):
+        c = Counter()
+        bert_star, lstm_star, trans_star = bert_eval[idx], lstm_eval[idx], trans_eval[idx]
+        target_star = groundtruth_stars[idx]
+        c[bert_star] += 1
+        c[lstm_star] += 1
+        c[trans_star] += 1
+
+        if len(c) <= 2:
+            pred_star = max(c)
+        else:
+            pred_star = int(np.ceil( np.average( list(c) ) ))
+
+
+        mean_abs_error += abs(pred_star - target_star)
+        mean_accuracy += 1 if pred_star == target_star else 0
+
+        # targets = targets.view_as(predicted_logits)
+        
+        # abs_error = (torch.abs(predicted_logits - targets)).sum()
+        # accuracy = predicted_logits.eq(targets).sum()
+
+        # mean_abs_error += abs_error.item()
+        # mean_accuracy += accuracy.item()
+        # total_examples += reviews.shape[0]
 
     
     print("MEAN ABSOLUTE ERROR: {}".format((mean_abs_error / total_examples)))
     print("MEAN ACCURACY: {}".format((mean_accuracy / total_examples)))
+
+def eval_torch(model, review):
+    pass
+
+def eval_bert(model, text):
+    stars, _ = model.eval(text)
+    return stars
 
 if __name__ == "__main__":
     logger = createLogger()
