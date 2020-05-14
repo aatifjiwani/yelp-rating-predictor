@@ -2,11 +2,13 @@
 A yelp rating predictor built using NLP models to predict the star rating of a written review.
 
 ## Instructions on running project/testing models
-1. Clone the repository using 
+### 1. Clone the repository using 
 ```
 git clone https://github.com/aatifjiwani/yelp-rating-predictor.git
 ```
-2. Download the model checkpoints from the following link: https://drive.google.com/drive/folders/1hiW7-aJJoUsPAjYbuK8ymuz2YupcExYE?usp=sharing
+### 2. Download the model checkpoints from the following link: 
+
+https://drive.google.com/drive/folders/1hiW7-aJJoUsPAjYbuK8ymuz2YupcExYE?usp=sharing
 
 Place all checkpoints within ```model_checkpoints/``` for ease of running the scripts without FileNotFound errors. 
 
@@ -20,13 +22,13 @@ The ```model_checks.zip``` file contains the model checkpoints from two BiLSTMs,
 
 The ```XLNet.zip``` file contains the model checkpoints for the XLNet. The zip file in its entirety is a smaller duplicate of the entire codebase but only utilize ```models/xlnet-checkpoint-30000/```. Move this directory into the same directory as the above model checkpoints. 
 
-3. Install required packages from requirements.txt using 
+### 3. Install required packages from requirements.txt using 
 ``` 
 pip install -r requirements.txt
 ```
 **NOTE**: If you're using a Mac OS/Windows, ensure you have Python 3.6 as ```simpletransformers``` requires it. If you're using Linux, ensure you have Python 3.7. 
 
-4. Testing/Running Models
+### 4. Testing/Running Models
 
 **IMPORTANT**: All of non pre-trained Transformer models utilize ```YelpDataset``` in ```datasets/YelpDataset.py```. For initial usage, you must pass in a tokenizer object (see ```datasets/vocab_gen.py```).
 
