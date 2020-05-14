@@ -22,13 +22,19 @@ The ```model_checks.zip``` file contains the model checkpoints from two BiLSTMs,
 
 The ```XLNet.zip``` file contains the model checkpoints for the XLNet. The zip file in its entirety is a smaller duplicate of the entire codebase but only utilize ```models/xlnet-checkpoint-30000/```. Move this directory into the same directory as the above model checkpoints. 
 
-### 3. Install required packages from requirements.txt using 
+### 3. Download the Embeddings from the following link
+
+https://drive.google.com/file/d/1FikCTiuYW_s3DOz8NpEc3pVN1n0Ocyj2/view?usp=sharing
+
+Place ```embeddingsV1.txt``` inside ```embedders```. 
+
+### 4. Install required packages from requirements.txt using 
 ``` 
 pip install -r requirements.txt
 ```
 **NOTE**: If you're using a Mac OS/Windows, ensure you have Python 3.6 as ```simpletransformers``` requires it. If you're using Linux, ensure you have Python 3.7. 
 
-### 4. Testing/Running Models
+### 5. Testing/Running Models
 
 **IMPORTANT**: All of non pre-trained Transformer models utilize ```YelpDataset``` in ```datasets/YelpDataset.py```. For initial usage, you must pass in a tokenizer object (see ```datasets/vocab_gen.py```).
 
