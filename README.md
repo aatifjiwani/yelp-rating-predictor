@@ -14,7 +14,9 @@ The ```model_checks.zip``` file contains the model checkpoints from two BiLSTMs,
 - Transformer-256 --> ```torch_transformer_v1.pt``` (Requires Base Tokenizer)
 - Transformer-360-WCE-BPE --> ```torch_transformer_v4_weight.pt``` (Requires BPE Tokenizer)
 - Transformer-5Layer-WCE-BPE --> ```torch_transformer_v7_weight.pt```(Requires BPE Tokenizer)
-- RoBERTa --> ```checkpoint_3000/```(Tokenizer already included within model checkpoint)
+- RoBERTa --> ```checkpoint_3000/```(Tokenizer already included within model checkpoint) [2nd BEST MODEL]
+
+Place all these checkpoints within ```model_checkpoints/``` for ease of running the scripts without FileNotFound errors. 
 
 3. Install required packages from requirements.txt using 
 ``` 
