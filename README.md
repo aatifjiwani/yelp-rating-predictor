@@ -9,12 +9,12 @@ git clone https://github.com/aatifjiwani/yelp-rating-predictor.git
 2. Download the model checkpoints from the following link: https://drive.google.com/drive/u/1/folders/1hiW7-aJJoUsPAjYbuK8ymuz2YupcExYE
 
 The ```model_checks.zip``` file contains the model checkpoints from two BiLSTMs, 7 Transformers, and a RoBERTa model. If you've read the project report, the following models correspond to these checkpoints:<br>
-- BiLSTM-Concat --> ```torch_bilstm_v1.pt```
-- BiLSTM-Sum    --> ```torch_bilstm_v3_1e3.pt```
-- Transformer-256 --> ```torch_transformer_v1.pt```
-- Transformer-360-WCE-BPE --> ```torch_transformer_v4_weight.pt```
-- Transformer-5Layer-WCE-BPE --> ```torch_transformer_v7_weight.pt```
-- RoBERTa --> ```checkpoint_3000/```
+- BiLSTM-Concat --> ```torch_bilstm_v1.pt``` (Requires Base Tokenizer)
+- BiLSTM-Sum    --> ```torch_bilstm_v3_1e3.pt``` (Requires Base Tokenizer)
+- Transformer-256 --> ```torch_transformer_v1.pt``` (Requires Base Tokenizer)
+- Transformer-360-WCE-BPE --> ```torch_transformer_v4_weight.pt``` (Requires BPE Tokenizer)
+- Transformer-5Layer-WCE-BPE --> ```torch_transformer_v7_weight.pt```(Requires BPE Tokenizer)
+- RoBERTa --> ```checkpoint_3000/```(Tokenizer already included within model checkpoint)
 
 3. Install required packages from requirements.txt using 
 ``` 
@@ -35,5 +35,10 @@ Testing datasets MUST be in a ```.jsonl``` format and obey the following convent
 ...
 {"review_id": "XYZ", "text": "...", "stars": "3.0"}
 ```
- Output predictions will be in ```output.jsonl```. Please remember to rename before testing to another dataset otherwise predictions will be overwritten.
+To test an entire dataset all at once, use 
+```
+python3 test_submission<_v2>.py dataset_name.jsonl
+```
+
+Output predictions will be in ```output.jsonl```. Please remember to rename before testing to another dataset otherwise predictions will be overwritten. If you want to test a different model that is not defaulted in ```test_submission.py```, simply copy and paste the correct lines from ```test_torchModel.py```.
       
