@@ -151,5 +151,4 @@ model_checkpoints/
 model_checks.zip
 model_plots/
 
-datasets/yelp_bpe/*
 cleaned_reviews.txt
