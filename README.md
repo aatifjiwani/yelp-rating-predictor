@@ -1,6 +1,7 @@
 # Yelp Me Rate This: Using Deep Learning to Predict Yelp Review Ratings
 A yelp rating predictor built using NLP models to predict the star rating of a written review.
-**FINAL REPORT: ** https://github.com/aatifjiwani/yelp-rating-predictor/blob/master/project_report.pdf
+
+**FINAL REPORT:** https://github.com/aatifjiwani/yelp-rating-predictor/blob/master/project_report.pdf
 
 ## Instructions on running project/testing models
 ### 1. Clone the repository using 
