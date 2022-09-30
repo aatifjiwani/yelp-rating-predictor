@@ -31,7 +31,7 @@ idna==2.9
 importlib-metadata==1.6.0
 Jinja2==2.8
 jmespath==0.10.0
-joblib==0.14.1
+joblib==1.2.0
 jsonlines==1.2.0
 jsonpatch==1.10
 jsonpointer==1.9
